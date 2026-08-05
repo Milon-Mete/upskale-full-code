@@ -1,0 +1,92 @@
+/* 1. Import Fonts FIRST */
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@900,700,500,300,400&display=swap');
+
+/* 2. Import Tailwind SECOND */
+@import "tailwindcss";
+
+/* 3. Configure the Font Family */
+@theme {
+  --font-sans: "Satoshi", ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+/* Hide scrollbar for IE, Edge and Firefox */
+.scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* --- GOOGLE TRANSLATE FLOATING UI OVERRIDES --- */
+
+/* 1. Hide the ugly white top bar Google adds */
+.skiptranslate iframe, 
+.goog-te-banner-frame {
+    display: none !important;
+}
+
+/* 2. Prevent Google from pushing the body down */
+body {
+    top: 0px !important;
+}
+
+/* 3. Style the Google container div */
+#google_translate_element {
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+/* 4. Target the actual <select> tag Google builds */
+.goog-te-combo {
+    background-color: transparent !important;
+    color: #ffffff !important;
+    border: none !important;
+    padding: 0px 4px !important;
+    font-size: 13px !important;
+    font-weight: bold !important;
+    outline: none !important;
+    cursor: pointer;
+    margin: 0 !important;
+    width: 100% !important; /* Force it to fill the container */
+    appearance: none; /* Strip default browser styling */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* 5. Style the dropdown options */
+.goog-te-combo option {
+    background-color: #121212 !important;
+    color: #ffffff !important;
+    padding: 8px !important;
+}
+
+/* 6. Nuke the extra text and Google logo */
+.goog-logo-link {
+    display: none !important;
+}
+.goog-te-gadget {
+    color: transparent !important;
+    font-size: 0px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+}
+.goog-te-gadget span {
+    display: none !important;
+}
+
+/* 7. Hide the hover tooltip box that Google adds natively */
+.goog-tooltip {
+    display: none !important;
+}
+.goog-tooltip:hover {
+    display: none !important;
+}
+.goog-text-highlight {
+    background-color: transparent !important;
+    border: none !important; 
+    box-shadow: none !important;
+}

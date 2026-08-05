@@ -1,0 +1,19 @@
+{
+  "short_name": "UPSKALE",
+  "name": "UPSKALE Bite Size Micro-Learning",
+  "icons": [
+    {
+      "src": "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1775412341/black_white_king_logo_20250815_165948_0000_tepz65.png",
+      "sizes": "192x192 512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "description": "Bite-sized video lessons & interactive micro-learning courses."
+}

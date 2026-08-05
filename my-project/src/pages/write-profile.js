@@ -1,0 +1,1 @@
+const fs = require("fs");const path = "F:/project backup/upscale backup/all compleate/UPSKALE/my-project/src/pages/ProfilePage.jsx";const content = "START";fs.writeFileSync(path, content, "utf-8");console.log("test ok");

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Trash2, ArrowRight, CheckCircle2, Lock, Loader2, X, Tag,
-  Clock, Zap, ShieldCheck
+  Clock, Zap, ShieldCheck, MessageCircle, PartyPopper
 } from 'lucide-react';
 import { BASE_URL } from '../config';
 import LoginModal from '../components/LoginModal';
@@ -18,6 +18,7 @@ const INK = '#1a1a18';
 const MUTE = '#6b675f';
 const GREEN = '#15875a';
 const LOGO_URL = 'https://res.cloudinary.com/villain/image/upload/v1770662332/20250730_170553_0000_xyfhoc.png';
+const WHATSAPP_GROUP_LINK = 'https://chat.whatsapp.com/BiTmEXn9nTVAIsBWnXPhVE?s=sh&p=a&ilr=0';
 
 // --- RAZORPAY LOADER ---
 const loadScript = (src) => {
@@ -46,6 +47,7 @@ const MasterclassCartPage = () => {
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState(null);
@@ -148,8 +150,7 @@ const MasterclassCartPage = () => {
             window.dispatchEvent(new Event("storage"));
           }
         } catch (e) { console.error("Profile refresh failed", e); }
-        alert("🎉 Successfully enrolled in this Free Masterclass!");
-        navigate('/profile');
+        setShowSuccess(true);
         return;
       }
 
@@ -174,8 +175,7 @@ const MasterclassCartPage = () => {
 
           if (verifyData.success) {
             sessionStorage.removeItem('activeMasterclassCart');
-            alert("Payment Successful! See you in class.");
-            navigate('/dashboard');
+            setShowSuccess(true);
           } else {
             alert("Payment verification failed. Please contact support.");
           }
@@ -344,6 +344,36 @@ const MasterclassCartPage = () => {
           }}
           onClose={() => setShowLoginModal(false)}
         />
+      )}
+
+      {/* Registration Success Modal */}
+      {showSuccess && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-5" style={{ background: 'rgba(26,26,24,0.6)' }}>
+          <div className="w-full max-w-md rounded-3xl p-8 text-center" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+            <div className="w-16 h-16 rounded-full mx-auto mb-5 flex items-center justify-center" style={{ background: '#eef7f1' }}>
+              <PartyPopper size={30} style={{ color: GREEN }} />
+            </div>
+            <h2 className="text-2xl font-black mb-2">You're Registered! 🎉</h2>
+            <p className="mb-6" style={{ color: MUTE }}>Your seat for <span className="font-bold" style={{ color: INK }}>{activeItem?.title}</span> is confirmed. See you in class!</p>
+
+            <a
+              href={WHATSAPP_GROUP_LINK}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 text-white py-4 rounded-xl font-bold text-lg mb-3 transition-all hover:scale-[1.01]"
+              style={{ background: '#25D366' }}
+            >
+              <MessageCircle size={20} /> Join WhatsApp Group
+            </a>
+            <button
+              onClick={() => navigate('/profile')}
+              className="w-full py-3 rounded-xl font-bold"
+              style={{ background: CREAM_ALT, color: INK, border: `1px solid ${BORDER}` }}
+            >
+              Go to My Profile
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

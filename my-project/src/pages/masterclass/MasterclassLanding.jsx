@@ -59,12 +59,12 @@ const MasterclassLanding = () => {
       { label: "Students", icon: <Trophy /> }
     ],
     bonuses: [
-      { title: "Complete AI Setup Guide", desc: "Value ₹999 — step-by-step doc to set up AI correctly from day one.", icon: <FileText size={24} /> },
-      { title: "Full Session Notes", desc: "Value ₹999 — every prompt, tool, link and framework, yours to keep.", icon: <Video size={24} /> },
+      { title: "Complete AI Setup Guide", desc: "Step-by-step doc to set up AI correctly from day one.", icon: <FileText size={24} /> },
+      { title: "Full Session Notes", desc: "Every prompt, tool, link and framework, yours to keep.", icon: <Video size={24} /> },
       { title: "Completion Certificate", desc: "Official verified badge.", icon: <GraduationCap size={24} /> }
     ],
     faqs: [
-      { question: "Is this workshop really free?", answer: "Yes! The workshop is 100% free — you only pay a small ₹9 convenience fee to confirm your seat." },
+      { question: "Is this workshop really free?", answer: "Yes! The workshop is completely free to attend. A small convenience fee applies only at checkout to confirm your seat." },
       { question: "Do I need any coding or technical background?", answer: "Not at all. This session is designed to take you from fundamentals to advanced use with zero code." },
       { question: "Will there be a recording?", answer: "Yes, registered attendees get access to the session recording." }
     ],
@@ -159,8 +159,6 @@ const MasterclassLanding = () => {
   };
 
   const formatDate = (d) => new Date(d).toLocaleDateString('en-US', { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' });
-  const isFree = data.price?.discounted === 0;
-  const original = data.price?.original || 0;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center" style={{ background: CREAM }}>
@@ -181,12 +179,9 @@ const MasterclassLanding = () => {
 
   const PriceBlock = ({ compact = false }) => (
     <div className="rounded-2xl p-6 text-center" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
-      <p className="text-sm font-semibold" style={{ color: MUTE }}>Total Value:{' '}
-        <span className="line-through">₹{original.toLocaleString()}</span>
-      </p>
-      <p className="text-xs font-bold uppercase tracking-widest mt-3" style={{ color: MUTE }}>Today you can get it for</p>
-      <div className="text-6xl font-black mt-1" style={{ color: isFree ? GREEN : INK }}>
-        {isFree ? 'FREE' : `₹${data.price?.discounted}`}
+      <p className="text-xs font-bold uppercase tracking-widest" style={{ color: MUTE }}>Your seat for this workshop is</p>
+      <div className="text-6xl font-black mt-2" style={{ color: GREEN }}>
+        FREE
       </div>
       <div className="flex items-center justify-center gap-4 mt-5 text-sm" style={{ color: INK }}>
         <span className="inline-flex items-center gap-1.5 font-semibold"><Calendar size={15} style={{ color: CLAY }} /> {formatDate(data.schedule.startDate)}</span>
@@ -194,15 +189,15 @@ const MasterclassLanding = () => {
       <div className="flex items-center justify-center gap-1.5 mt-2 text-sm font-semibold" style={{ color: INK }}>
         <Clock size={15} style={{ color: CLAY }} /> {data.schedule.startTime} – {data.schedule.endTime} IST
       </div>
-      <CtaButton label={isPurchased ? 'Go to Your Profile' : `Register now for ₹${original} Free`} className="w-full mt-6 py-4 text-lg" />
+      <CtaButton label={isPurchased ? 'Go to Your Profile' : 'Register Now — It\'s Free'} className="w-full mt-6 py-4 text-lg" />
       {!compact && (
         <>
-          <p className="text-xs font-semibold mt-4" style={{ color: MUTE }}>This special offer ends in</p>
+          <p className="text-xs font-semibold mt-4" style={{ color: MUTE }}>Limited seats — closing in</p>
           <div className="text-2xl font-black tracking-widest mt-1" style={{ color: CLAY }}>{mm}:{ss}</div>
         </>
       )}
       <div className="mt-4 flex items-center justify-center gap-1.5 text-xs" style={{ color: MUTE }}>
-        <ShieldCheck size={13} /> Secure registration • Only ₹9 convenience fee
+        <ShieldCheck size={13} /> Secure registration
       </div>
     </div>
   );
@@ -327,7 +322,7 @@ const MasterclassLanding = () => {
               </div>
             ))}
           </div>
-          <div className="text-center mt-10"><CtaButton label={`Register now for ₹${original} Free`} className="px-8 py-4 text-lg" /></div>
+          <div className="text-center mt-10"><CtaButton label="Register Now — It's Free" className="px-8 py-4 text-lg" /></div>
         </div>
       </section>
 
@@ -483,9 +478,8 @@ const MasterclassLanding = () => {
           <div className="hidden sm:block">
             {!isPurchased ? (
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black" style={{ color: GREEN }}>{isFree ? 'FREE' : `₹${data.price?.discounted}`}</span>
-                <span className="text-sm line-through" style={{ color: MUTE }}>₹{original}</span>
-                <span className="text-xs font-semibold ml-2" style={{ color: CLAY }}>Offer ends in {mm}:{ss}</span>
+                <span className="text-xl font-black" style={{ color: GREEN }}>FREE</span>
+                <span className="text-xs font-semibold ml-2" style={{ color: CLAY }}>Seats close in {mm}:{ss}</span>
               </div>
             ) : (
               <span className="font-bold text-sm inline-flex items-center gap-1.5" style={{ color: GREEN }}>

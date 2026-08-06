@@ -218,7 +218,7 @@ const MasterclassCartPage = () => {
 
   // --- EMPTY STATE ---
   if (cartItems.length === 0) return (
-    <div className="min-h-screen flex flex-col" style={{ background: CREAM, color: INK, fontFamily: "'Poppins', sans-serif" }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden w-full" style={{ background: CREAM, color: INK, fontFamily: "'Poppins', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');`}</style>
       <Header />
       <div className="flex-1 flex flex-col items-center justify-center px-5">
@@ -231,7 +231,7 @@ const MasterclassCartPage = () => {
   );
 
   return (
-    <div className="min-h-screen" style={{ background: CREAM, color: INK, fontFamily: "'Poppins', sans-serif" }}>
+    <div className="min-h-screen overflow-x-hidden w-full" style={{ background: CREAM, color: INK, fontFamily: "'Poppins', sans-serif" }}>
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&display=swap');`}</style>
       <Header />
 
@@ -280,9 +280,9 @@ const MasterclassCartPage = () => {
                   <button onClick={removeCoupon} className="hover:opacity-70" style={{ color: MUTE }}><X size={16} /></button>
                 </div>
               ) : (
-                <div className="flex gap-2">
+                <div className="flex gap-2 min-w-0">
                   <input type="text" placeholder="Enter Code" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    className="flex-1 rounded-xl px-4 py-2 outline-none" style={{ background: CREAM, border: `1px solid ${BORDER}`, color: INK }} />
+                    className="flex-1 min-w-0 rounded-xl px-4 py-2 outline-none" style={{ background: CREAM, border: `1px solid ${BORDER}`, color: INK }} />
                   <button onClick={handleApplyCoupon} disabled={couponLoading} className="text-white font-bold px-4 rounded-xl disabled:opacity-50"
                     style={{ background: INK }}>{couponLoading ? <Loader2 className="animate-spin" /> : 'Apply'}</button>
                 </div>

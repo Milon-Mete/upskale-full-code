@@ -204,12 +204,12 @@ const MasterclassCartPage = () => {
 
   // --- HEADER / FOOTER (self-contained light theme) ---
   const Header = () => (
-    <header className="sticky top-0 z-40 backdrop-blur-md" style={{ background: 'rgba(250,249,245,0.85)', borderBottom: `1px solid ${BORDER}` }}>
-      <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
-        <button onClick={() => navigate('/')} className="flex items-center">
+    <header className="sticky top-0 z-40 backdrop-blur-md w-full overflow-hidden" style={{ background: 'rgba(250,249,245,0.85)', borderBottom: `1px solid ${BORDER}` }}>
+      <div className="max-w-6xl mx-auto px-5 h-16 flex items-center justify-between gap-2 min-w-0">
+        <button onClick={() => navigate('/')} className="flex items-center flex-shrink-0">
           <img src={LOGO_URL} alt="UPSKALE" className="h-9 w-auto object-contain" />
         </button>
-        <span className="text-sm font-semibold inline-flex items-center gap-1.5" style={{ color: MUTE }}>
+        <span className="text-sm font-semibold inline-flex items-center gap-1.5 flex-shrink-0" style={{ color: MUTE }}>
           <Lock size={14} /> Secure Checkout
         </span>
       </div>
@@ -244,14 +244,14 @@ const MasterclassCartPage = () => {
         <div className="grid lg:grid-cols-3 gap-8">
 
           {/* LEFT: DETAILS */}
-          <div className="lg:col-span-2 space-y-5">
-            <div className="rounded-2xl p-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+          <div className="lg:col-span-2 space-y-5 min-w-0">
+            <div className="rounded-2xl p-6 overflow-hidden" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
               <div className="flex flex-col md:flex-row gap-5">
-                <img src={activeItem.image} alt="" className="w-full md:w-48 h-32 object-cover rounded-xl" />
-                <div className="flex-1">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-black leading-tight">{activeItem.title}</h3>
-                    <button onClick={handleRemove} className="p-2 hover:opacity-70" style={{ color: MUTE }}><Trash2 size={18} /></button>
+                <img src={activeItem.image} alt="" className="w-full md:w-48 h-32 object-cover rounded-xl flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start gap-2 mb-2 min-w-0">
+                    <h3 className="text-xl font-black leading-tight break-words min-w-0">{activeItem.title}</h3>
+                    <button onClick={handleRemove} className="p-2 hover:opacity-70 flex-shrink-0" style={{ color: MUTE }}><Trash2 size={18} /></button>
                   </div>
                   <div className="flex flex-wrap gap-2 mb-4">
                     <span className="text-xs font-bold px-3 py-1 rounded-full inline-flex items-center gap-1"
@@ -269,65 +269,79 @@ const MasterclassCartPage = () => {
           </div>
 
           {/* RIGHT: SUMMARY */}
-          <div className="lg:col-span-1 space-y-5">
+          <div className="lg:col-span-1 space-y-5 min-w-0">
 
             {/* Coupon */}
-            <div className="rounded-2xl p-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+            <div className="rounded-2xl p-6 overflow-hidden" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
               <h3 className="text-sm font-bold uppercase tracking-widest mb-4 flex items-center gap-2" style={{ color: MUTE }}><Tag size={16} /> Coupon Code</h3>
               {appliedCoupon ? (
-                <div className="rounded-xl p-3 flex justify-between items-center" style={{ background: '#eef7f1', border: `1px solid #cfe8da` }}>
-                  <div><p className="font-bold" style={{ color: GREEN }}>{appliedCoupon.code}</p><p className="text-xs" style={{ color: GREEN }}>Discount Applied</p></div>
-                  <button onClick={removeCoupon} className="hover:opacity-70" style={{ color: MUTE }}><X size={16} /></button>
+                <div className="rounded-xl p-3 flex justify-between items-center gap-2 min-w-0" style={{ background: '#eef7f1', border: `1px solid #cfe8da` }}>
+                  <div className="min-w-0"><p className="font-bold truncate" style={{ color: GREEN }}>{appliedCoupon.code}</p><p className="text-xs" style={{ color: GREEN }}>Discount Applied</p></div>
+                  <button onClick={removeCoupon} className="hover:opacity-70 flex-shrink-0" style={{ color: MUTE }}><X size={16} /></button>
                 </div>
               ) : (
                 <div className="flex gap-2 min-w-0">
                   <input type="text" placeholder="Enter Code" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                    className="flex-1 min-w-0 rounded-xl px-4 py-2 outline-none" style={{ background: CREAM, border: `1px solid ${BORDER}`, color: INK }} />
-                  <button onClick={handleApplyCoupon} disabled={couponLoading} className="text-white font-bold px-4 rounded-xl disabled:opacity-50"
-                    style={{ background: INK }}>{couponLoading ? <Loader2 className="animate-spin" /> : 'Apply'}</button>
+                    className="flex-1 min-w-0 w-full rounded-xl px-4 py-2 outline-none" style={{ background: CREAM, border: `1px solid ${BORDER}`, color: INK }} />
+                  <button onClick={handleApplyCoupon} disabled={couponLoading} className="text-white font-bold px-4 rounded-xl disabled:opacity-50 flex-shrink-0 whitespace-nowrap"
+                    style={{ background: INK }}>{couponLoading ? <Loader2 className="animate-spin" size={18} /> : 'Apply'}</button>
                 </div>
               )}
-              {couponMsg.text && <p className="text-xs mt-2 font-bold" style={{ color: couponMsg.type === 'error' ? '#c0392b' : GREEN }}>{couponMsg.text}</p>}
+              {couponMsg.text && <p className="text-xs mt-2 font-bold break-words" style={{ color: couponMsg.type === 'error' ? '#c0392b' : GREEN }}>{couponMsg.text}</p>}
             </div>
 
             {/* Total */}
-            <div className="rounded-2xl p-7 lg:sticky lg:top-24" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
+            <div className="rounded-2xl p-7 lg:sticky lg:top-24 overflow-hidden" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
               <h3 className="text-lg font-black mb-5">Payment Summary</h3>
-              <div className="flex justify-between mb-3" style={{ color: MUTE }}>
-                <span>Ticket Price</span>
-                <span>{currentBasePrice === 0 ? <span className="font-bold" style={{ color: GREEN }}>FREE</span> : `₹${currentBasePrice.toLocaleString()}`}</span>
+              <div className="flex justify-between gap-2 mb-3 min-w-0" style={{ color: MUTE }}>
+                <span className="flex-shrink-0">Ticket Price</span>
+                <span className="flex-shrink-0">{currentBasePrice === 0 ? <span className="font-bold" style={{ color: GREEN }}>FREE</span> : `₹${currentBasePrice.toLocaleString()}`}</span>
               </div>
 
-              {appliedCoupon && (<div className="flex justify-between mb-3" style={{ color: GREEN }}><span>Coupon ({appliedCoupon.code})</span><span>- ₹{appliedCoupon.baseDiscount.toLocaleString()}</span></div>)}
+              {appliedCoupon && (<div className="flex justify-between gap-2 mb-3 min-w-0" style={{ color: GREEN }}><span className="min-w-0 truncate">Coupon ({appliedCoupon.code})</span><span className="flex-shrink-0">- ₹{appliedCoupon.baseDiscount.toLocaleString()}</span></div>)}
 
               {appliedPromotions.length > 0 && appliedPromotions.map((promo, idx) => (
-                <div key={idx} className="flex justify-between mb-3 font-bold" style={{ color: '#c67c00' }}>
-                  <span>Extra: {promo.message || promo.promotionName}</span>
-                  <span>- ₹{promo.discountValue.toLocaleString()}</span>
+                <div key={idx} className="flex justify-between gap-2 mb-3 font-bold min-w-0" style={{ color: '#c67c00' }}>
+                  <span className="min-w-0 truncate">Extra: {promo.message || promo.promotionName}</span>
+                  <span className="flex-shrink-0">- ₹{promo.discountValue.toLocaleString()}</span>
                 </div>
               ))}
 
               {/* 🔴 Convenience Fee */}
-              {CONVENIENCE_FEE > 0 && (<div className="flex justify-between mb-3" style={{ color: MUTE }}><span>Convenience Fee</span><span>₹{CONVENIENCE_FEE}</span></div>)}
+              {CONVENIENCE_FEE > 0 && (<div className="flex justify-between gap-2 mb-3 min-w-0" style={{ color: MUTE }}><span className="flex-shrink-0">Convenience Fee</span><span className="flex-shrink-0">₹{CONVENIENCE_FEE}</span></div>)}
 
               <div className="h-px my-5" style={{ background: BORDER }}></div>
-              <div className="flex justify-between items-end mb-6">
-                <span className="font-bold text-lg">Total Payable</span>
-                <span className="text-4xl font-black" style={{ color: finalTotal === 0 ? GREEN : INK }}>
+              <div className="flex justify-between items-end gap-2 mb-6 min-w-0">
+                <span className="font-bold text-lg flex-shrink-0">Total Payable</span>
+                <span className="text-3xl sm:text-4xl font-black flex-shrink-0" style={{ color: finalTotal === 0 ? GREEN : INK }}>
                   {finalTotal === 0 ? 'FREE' : `₹${finalTotal.toLocaleString()}`}
                 </span>
               </div>
-              <button onClick={handlePayment} className="w-full text-white py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.01]"
+              <button onClick={handlePayment} className="hidden lg:flex w-full text-white py-4 rounded-xl font-bold text-lg items-center justify-center gap-2 transition-all hover:scale-[1.01]"
                 style={{ background: finalTotal === 0 ? GREEN : `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}>
                 {finalTotal === 0 ? 'Enroll For Free' : 'Complete Registration'} <ArrowRight size={20} />
               </button>
-              <p className="text-center text-xs mt-4 flex items-center justify-center gap-1" style={{ color: MUTE }}>
+              <p className="hidden lg:flex text-center text-xs mt-4 items-center justify-center gap-1" style={{ color: MUTE }}>
                 <ShieldCheck size={12} /> {finalTotal === 0 ? '100% Free Instant Registration' : 'Secure Payment via Razorpay'}
               </p>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Sticky payment bar — mobile & tablet (desktop uses the inline button in the summary card) */}
+      <div className="lg:hidden fixed bottom-0 left-0 w-full z-40 backdrop-blur-md"
+        style={{ background: 'rgba(255,255,255,0.95)', borderTop: `1px solid ${BORDER}` }}>
+        <div className="px-4 py-3">
+          <button onClick={handlePayment} className="w-full text-white py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            style={{ background: finalTotal === 0 ? GREEN : `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}>
+            {finalTotal === 0 ? 'Enroll For Free' : 'Complete Registration'}
+            {finalTotal > 0 && <span className="opacity-90">· ₹{finalTotal.toLocaleString()}</span>}
+            <ArrowRight size={18} />
+          </button>
+        </div>
+      </div>
+      <div className="lg:hidden h-24" />
 
       {/* Footer */}
       <footer className="py-8 px-5 text-center mt-8" style={{ background: INK, color: '#d9d5cc' }}>

@@ -1,5 +1,5 @@
 // UPSKALE BiteSize PWA Service Worker (Offline Readiness & Asset Caching)
-const CACHE_NAME = 'upskale-bitesize-v1';
+const CACHE_NAME = 'upskale-bitesize-v2';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
@@ -32,7 +32,7 @@ self.addEventListener('activate', (event) => {
     self.clients.claim();
 });
 
-// Fetch Event - Network First with Cache Fallback for API, Cache First for Static Assets
+// Fetch Event
 self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
 
@@ -49,7 +49,29 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For static assets: Cache first with network update
+    // For the HTML shell (navigations + index.html itself): Network first.
+    // This is a content-hashed Vite build, so the JS/CSS filenames referenced
+    // inside index.html change every deploy. If index.html is served stale
+    // from cache, the page can keep running an old bundle indefinitely even
+    // after a new version is live. Always try the network first here, and
+    // only fall back to the cached shell when fully offline.
+    const isHtmlShell = event.request.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html');
+    if (isHtmlShell) {
+        event.respondWith(
+            fetch(event.request).then((networkResponse) => {
+                if (networkResponse.status === 200) {
+                    const responseClone = networkResponse.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+                }
+                return networkResponse;
+            }).catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
+    // For hashed static assets (js/css with a content hash in the filename):
+    // Cache first is safe here because the filename itself changes whenever
+    // the content changes, so a "stale" cache entry can never mask an update.
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
             if (cachedResponse) {

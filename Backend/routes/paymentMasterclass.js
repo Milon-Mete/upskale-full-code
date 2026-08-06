@@ -150,6 +150,12 @@ router.post('/create-order', requireAuth, async (req, res) => {
         // Safety floor
         if (finalAmountToCharge < 0) finalAmountToCharge = 0;
 
+        // --- CONVENIENCE FEE ---
+        // Free workshops (base price ₹0) still collect a small platform convenience fee.
+        // Paid masterclasses are unaffected.
+        const CONVENIENCE_FEE = basePrice === 0 ? 9 : 0;
+        finalAmountToCharge += CONVENIENCE_FEE;
+
         // --- FREE MASTERCLASS ENROLLMENT (0 RS) ---
         if (finalAmountToCharge === 0) {
             const user = await User.findById(userId);

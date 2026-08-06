@@ -417,6 +417,7 @@ const MasterclassLanding = () => {
       </section>
 
       {/* ===== REVIEWS GRID ===== */}
+      {data.reviews?.length > 0 && (
       <section className="py-20 px-5">
         <div className="max-w-5xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-black text-center mb-12" style={{ color: INK }}>What Students Say</h2>
@@ -441,8 +442,10 @@ const MasterclassLanding = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* ===== FAQ ===== */}
+      {data.faqs?.length > 0 && (
       <section className="py-20 px-5" style={{ background: CREAM_ALT }}>
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl md:text-4xl font-black text-center mb-10" style={{ color: INK }}>FAQs</h2>
@@ -462,6 +465,7 @@ const MasterclassLanding = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* ===== FINAL CTA ===== */}
       <section className="py-20 px-5 text-center">

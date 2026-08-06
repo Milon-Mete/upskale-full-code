@@ -35,11 +35,15 @@ const MobileBottomNav = () => {
         new Date(subscription.expiresAt) > new Date()
     );
 
-    // Hide bottom nav on video playback views or admin routes
+    // Hide bottom nav on video playback views, admin routes, or the masterclass
+    // checkout flow (that page has its own sticky pay bar in the same
+    // bottom-of-screen spot — the site nav would only compete with it for
+    // space, or sit at the same z-index and get visually clipped).
     const isBiteSizeFullView = currentPath.includes('/bitesize/') && !currentPath.includes('/checkout');
     const isAdminView = currentPath.startsWith('/admin') || currentPath.startsWith('/god');
+    const isMasterclassCheckout = currentPath.startsWith('/masterclasscart');
 
-    if (isBiteSizeFullView || isAdminView) {
+    if (isBiteSizeFullView || isAdminView || isMasterclassCheckout) {
         return null;
     }
 

@@ -330,8 +330,8 @@ const MasterclassCartPage = () => {
       </div>
 
       {/* Sticky payment bar — mobile & tablet (desktop uses the inline button in the summary card) */}
-      <div className="lg:hidden fixed bottom-0 left-0 w-full z-40 backdrop-blur-md"
-        style={{ background: 'rgba(255,255,255,0.95)', borderTop: `1px solid ${BORDER}` }}>
+      <div className="lg:hidden fixed bottom-0 left-0 w-full z-50 backdrop-blur-md"
+        style={{ background: 'rgba(255,255,255,0.95)', borderTop: `1px solid ${BORDER}`, paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="px-4 py-3">
           <button onClick={handlePayment} className="w-full text-white py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             style={{ background: finalTotal === 0 ? GREEN : `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}>

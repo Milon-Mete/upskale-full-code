@@ -8,6 +8,7 @@ import {
   GraduationCap, Check, Sparkles, Award
 } from 'lucide-react';
 import { BASE_URL } from '../../config';
+import Accreditations from '../../components/Accreditations';
 
 // ================= THEME TOKENS (Outskill / Claude palette) =================
 const CLAY = '#c96442';       // primary accent (terracotta)
@@ -438,6 +439,9 @@ const MasterclassLanding = () => {
         </div>
       </section>
       )}
+
+      {/* ===== ACCREDITATIONS ===== */}
+      <Accreditations accent={CLAY} />
 
       {/* ===== FAQ ===== */}
       {data.faqs?.length > 0 && (

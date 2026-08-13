@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import Footer from '../components/Footer';
 import Navbar from '../components/Navbar';
+import Accreditations from '../components/Accreditations';
 import { BASE_URL } from '../config';
 import { useCart } from '../context/CartContext';
 
@@ -827,7 +828,7 @@ const DynamicCoursePage = () => {
             {[
               { name: "Sandipan Das", role: "Economic Professor", image: "https://res.cloudinary.com/dhm18d3so/image/upload/v1773741214/man-empty-avatar-photo-placeholder-for-social-networks-resumes-forums-and-dating-sites-male-and-female-no-photo-images-for-unfilled-user-profile-free-vector_qsnqyy.webp", subjects: ["Economics", "Data Science"] },
               { name: "Debraj Sarkar", role: "Senior Consultant", image: "https://res.cloudinary.com/dhm18d3so/image/upload/v1773741214/man-empty-avatar-photo-placeholder-for-social-networks-resumes-forums-and-dating-sites-male-and-female-no-photo-images-for-unfilled-user-profile-free-vector_qsnqyy.webp", subjects: ["Business", "Analytics"] },
-              { name: "Soumyadeep Datta", role: "AI Specialist", image: "https://res.cloudinary.com/dhm18d3so/image/upload/v1773741214/man-empty-avatar-photo-placeholder-for-social-networks-resumes-forums-and-dating-sites-male-and-female-no-photo-images-for-unfilled-user-profile-free-vector_qsnqyy.webp", subjects: ["Machine Learning", "AI"] },
+              { name: "Soumyadeep Datta", role: "AI Specialist", image: "/soumyadeep-avatar.jpg", subjects: ["Machine Learning", "AI"] },
             ].map((instructor, idx) => (
               <div
                 key={idx}
@@ -1096,6 +1097,8 @@ const DynamicCoursePage = () => {
           )}
         </div>
       </section>
+
+      <Accreditations className="bg-gray-50 border-t border-gray-200" />
 
       <Footer />
 

@@ -19,6 +19,7 @@ import MobileBottomNav from '../components/MobileBottomNav';
 import ContinueWatching from '../components/ContinueWatching';
 import PremiumGallery from "../components/PremiumGallery";
 import StudentBrands from "../components/StudentBrands";
+import Accreditations from "../components/Accreditations";
 
 const Home = () => {
   const courseSectionRef = useRef(null);
@@ -150,6 +151,7 @@ const Home = () => {
       </section>
       <StudentBrands/>
       <HiringPartners />
+      <Accreditations className="bg-gray-50" />
       <Testimonials />
       <FinalCTA />
       <FAQ />

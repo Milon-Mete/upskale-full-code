@@ -548,6 +548,59 @@ router.get('/streak', requireAuth, async (req, res) => {
 });
 
 // =====================================================
+// ⚡ LIFETIME XP
+// =====================================================
+
+// XP rates. Kept here so the server stays the single source of truth —
+// the client only renders whatever this endpoint returns.
+const XP_PER_VIDEO = 50;
+const XP_PER_QUIZ = 100;
+const XP_PER_COURSE = 250;
+
+// Lifetime XP across every bite-size course.
+//
+// Derived on read from the completion records rather than kept in a counter
+// on the user. That means no migration for existing learners (their history
+// is already in VideoProgress), and re-watching a finished module can never
+// award XP twice — the record is either completed or it isn't.
+router.get('/xp', requireAuth, async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const [breakdown, user] = await Promise.all([
+            VideoProgress.aggregate([
+                { $match: { user: new mongoose.Types.ObjectId(userId), completed: true } },
+                { $group: { _id: '$moduleType', count: { $sum: 1 } } }
+            ]),
+            User.findById(userId).select('completedCourses').lean()
+        ]);
+
+        const counts = breakdown.reduce((acc, row) => {
+            acc[row._id] = row.count;
+            return acc;
+        }, {});
+
+        const completedVideos = counts.video || 0;
+        const completedQuizzes = counts.quiz || 0;
+        const coursesCompleted = (user?.completedCourses || []).length;
+
+        const xp = (completedVideos * XP_PER_VIDEO)
+            + (completedQuizzes * XP_PER_QUIZ)
+            + (coursesCompleted * XP_PER_COURSE);
+
+        res.json({
+            success: true,
+            xp,
+            completedVideos,
+            completedQuizzes,
+            coursesCompleted
+        });
+    } catch (err) {
+        res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// =====================================================
 // 💬 COMMENTS (Updated for module-level)
 // =====================================================
 

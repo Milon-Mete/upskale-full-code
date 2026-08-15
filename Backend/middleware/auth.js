@@ -81,8 +81,10 @@ const checkCourseAccess = async (req, res, next) => {
       (enrollment) => enrollment.item.toString() === requestedCourseId
     );
 
-    if (exactEnrollment && ['full', 'installment', 'one-time', 'partial'].includes(exactEnrollment.paymentStatus)) {
-      return next(); 
+    // 'completed' is the legacy equivalent of 'full'. Omitting it here locked
+    // paying customers out of courses they had already bought.
+    if (exactEnrollment && ['full', 'installment', 'one-time', 'partial', 'completed'].includes(exactEnrollment.paymentStatus)) {
+      return next();
     }
 
     return res.status(403).json({ 

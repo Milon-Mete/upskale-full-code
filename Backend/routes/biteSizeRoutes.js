@@ -295,10 +295,17 @@ router.post('/admin/reconcile-payments', adminOnly, async (req, res) => {
         // If that write threw, the money is ours and the customer has nothing,
         // and scanning only 'pending' would never surface it.
         const statuses = req.body?.includePaid === true ? ['pending', 'paid'] : ['pending'];
-        const pending = await Order.find({
-            itemModel: 'Subscription',
-            status: { $in: statuses }
-        }).sort({ createdAt: -1 }).limit(100);
+
+        // Prefer fixing ONE named order. A bulk sweep over historic paid orders
+        // re-grants subscriptions that were already honoured and have since
+        // expired normally — free access nobody is owed. Only reach for the
+        // sweep when you have checked the dry run line by line.
+        const onlyOrderId = req.body?.orderId;
+        const query = onlyOrderId
+            ? { itemModel: 'Subscription', razorpayOrderId: onlyOrderId }
+            : { itemModel: 'Subscription', status: { $in: statuses } };
+
+        const pending = await Order.find(query).sort({ createdAt: -1 }).limit(onlyOrderId ? 1 : 100);
 
         const results = { checked: pending.length, fulfilled: [], stillUnpaid: [], errors: [] };
 

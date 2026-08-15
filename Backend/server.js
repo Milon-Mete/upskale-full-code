@@ -56,12 +56,16 @@ app.use(helmet({
 }));
 const PORT = process.env.PORT || 5000;
 
+// www and apex are DIFFERENT origins to a browser. The site answers on both
+// https://upskale.co and https://www.upskale.co, so both must be listed here.
+// Leaving www out silently breaks every API call for anyone who lands on it:
+// login fails, and Razorpay still takes the money while the verify-payment
+// callback is blocked — so the customer is charged and nothing is unlocked.
 const allowedOrigins = [
   'http://localhost:5173',
   'https://upskal.netlify.app',
   'https://upskale.co',
-  // 🔴 ADD YOUR NEW HOSTINGER/RENDER DOMAIN(S) HERE
-  // 'https://your-frontend-domain.com'
+  'https://www.upskale.co',
 ];
 
 app.set('trust proxy', 1);

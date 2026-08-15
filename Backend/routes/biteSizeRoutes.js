@@ -246,6 +246,94 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
 });
 
 // =====================================================
+// 2b. ADMIN: RECONCILE PAID-BUT-UNFULFILLED SUBSCRIPTIONS
+// =====================================================
+//
+// A subscription is normally activated by /verify-payment, called by the
+// browser right after Razorpay succeeds. If that call never lands — the
+// customer closed the tab, lost signal, or the request was blocked (a CORS
+// misconfiguration did exactly this for anyone on www.upskale.co) — Razorpay
+// has the money and the Order is left 'pending'. The customer is charged and
+// gets nothing.
+//
+// This asks Razorpay which of our pending orders were actually captured, and
+// fulfils only those. Access is never granted on our say-so: if Razorpay does
+// not report a captured payment, the order is left alone.
+//
+// GET  ?dryRun=true  to see what would be fixed without changing anything.
+router.post('/admin/reconcile-payments', adminOnly, async (req, res) => {
+    try {
+        const dryRun = req.body?.dryRun === true;
+        const pending = await Order.find({
+            itemModel: 'Subscription',
+            status: 'pending'
+        }).sort({ createdAt: -1 }).limit(100);
+
+        const results = { checked: pending.length, fulfilled: [], stillUnpaid: [], errors: [] };
+
+        for (const order of pending) {
+            try {
+                const payments = await razorpay.orders.fetchPayments(order.razorpayOrderId);
+                const captured = (payments?.items || []).find(p => p.status === 'captured');
+
+                if (!captured) {
+                    results.stillUnpaid.push({ orderId: order.razorpayOrderId, amount: order.amountPaid });
+                    continue;
+                }
+
+                const user = await User.findById(order.userId);
+                if (!user) {
+                    results.errors.push({ orderId: order.razorpayOrderId, reason: 'user not found' });
+                    continue;
+                }
+
+                if (dryRun) {
+                    results.fulfilled.push({
+                        orderId: order.razorpayOrderId, paymentId: captured.id,
+                        amount: order.amountPaid, planType: order.planType,
+                        user: user.name || user.email || user.phone, dryRun: true
+                    });
+                    continue;
+                }
+
+                order.status = 'paid';
+                order.razorpayPaymentId = captured.id;
+                order.fulfilledVia = 'admin:reconcile';
+                await order.save();
+
+                const daysMap = { trial: 3, monthly: 30, yearly: 365 };
+                const daysToAdd = daysMap[order.planType] || 30;
+                const currentExpiry = user.biteSizeSubscription?.expiresAt;
+                const baseDate = (currentExpiry && new Date(currentExpiry) > new Date())
+                    ? new Date(currentExpiry) : new Date();
+
+                user.biteSizeSubscription = {
+                    status: 'active',
+                    planType: order.planType,
+                    expiresAt: new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000),
+                    trialUsed: order.planType === 'trial' ? true : (user.biteSizeSubscription?.trialUsed || false)
+                };
+                await user.save();
+
+                console.log(`✅ [admin:reconcile] Activated ${order.planType} for user ${user._id} from payment ${captured.id}`);
+                results.fulfilled.push({
+                    orderId: order.razorpayOrderId, paymentId: captured.id,
+                    amount: order.amountPaid, planType: order.planType,
+                    user: user.name || user.email || user.phone
+                });
+            } catch (e) {
+                results.errors.push({ orderId: order.razorpayOrderId, reason: e.message });
+            }
+        }
+
+        res.json({ success: true, dryRun, ...results });
+    } catch (err) {
+        console.error("Reconcile Error:", err);
+        res.status(500).json({ success: false, message: "Reconcile failed" });
+    }
+});
+
+// =====================================================
 // 3. PROTECTED CONTENT (SECURED)
 // =====================================================
 

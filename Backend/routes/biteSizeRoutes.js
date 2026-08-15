@@ -271,9 +271,33 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
 router.post('/admin/reconcile-payments', adminOnly, async (req, res) => {
     try {
         const dryRun = req.body?.dryRun === true;
+
+        // Look up one customer's full state by email/phone. Answers "they say they
+        // paid — what does our side actually show?" without guessing.
+        const lookup = req.body?.lookup;
+        if (lookup) {
+            const u = await User.findOne({ $or: [{ email: lookup }, { phone: lookup }] })
+                .select('_id name email phone biteSizeSubscription enrolledCourses').lean();
+            if (!u) return res.json({ success: true, lookup, found: false });
+            const orders = await Order.find({ userId: u._id }).sort({ createdAt: -1 }).limit(20)
+                .select('razorpayOrderId razorpayPaymentId status planType amountPaid itemModel fulfilledVia createdAt').lean();
+            return res.json({
+                success: true, lookup, found: true,
+                user: { id: u._id, name: u.name, email: u.email, phone: u.phone },
+                subscription: u.biteSizeSubscription || null,
+                enrolments: (u.enrolledCourses || []).length,
+                orders
+            });
+        }
+
+        // A payment can also strand as status:'paid' with no subscription — the
+        // order is marked paid first, and the subscription write happens after.
+        // If that write threw, the money is ours and the customer has nothing,
+        // and scanning only 'pending' would never surface it.
+        const statuses = req.body?.includePaid === true ? ['pending', 'paid'] : ['pending'];
         const pending = await Order.find({
             itemModel: 'Subscription',
-            status: 'pending'
+            status: { $in: statuses }
         }).sort({ createdAt: -1 }).limit(100);
 
         const results = { checked: pending.length, fulfilled: [], stillUnpaid: [], errors: [] };
@@ -303,6 +327,14 @@ router.post('/admin/reconcile-payments', adminOnly, async (req, res) => {
                 const user = await User.findById(order.userId);
                 if (!user) {
                     results.errors.push({ orderId: order.razorpayOrderId, reason: 'user not found' });
+                    continue;
+                }
+
+                // Don't re-grant a paid order the customer already received. Only
+                // act when they currently hold no live subscription.
+                const sub = user.biteSizeSubscription;
+                const alreadyActive = sub?.status === 'active' && sub.expiresAt && new Date(sub.expiresAt) > new Date();
+                if (order.status === 'paid' && alreadyActive) {
                     continue;
                 }
 

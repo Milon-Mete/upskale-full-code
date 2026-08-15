@@ -284,7 +284,19 @@ router.post('/admin/reconcile-payments', adminOnly, async (req, res) => {
                 const captured = (payments?.items || []).find(p => p.status === 'captured');
 
                 if (!captured) {
-                    results.stillUnpaid.push({ orderId: order.razorpayOrderId, amount: order.amountPaid });
+                    // Report what Razorpay actually holds. An 'authorized' payment
+                    // means the money is held but never captured — the customer has
+                    // been charged in their eyes, so these must not be dismissed as
+                    // simply unpaid.
+                    results.stillUnpaid.push({
+                        orderId: order.razorpayOrderId,
+                        amount: order.amountPaid,
+                        createdAt: order.createdAt,
+                        razorpayStatuses: (payments?.items || []).map(p => ({
+                            id: p.id, status: p.status, amount: p.amount / 100,
+                            method: p.method, email: p.email, contact: p.contact
+                        }))
+                    });
                     continue;
                 }
 

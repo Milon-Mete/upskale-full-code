@@ -33,11 +33,16 @@ const userSchema = new mongoose.Schema({
         enum: ['recorded', 'live', 'trial', 'standard', 'subscription', 'monthly', 'yearly'], 
         default: 'recorded' 
       },
-      paymentStatus: { 
-        type: String, 
-        // Synchronized array
-        enum: ['full', 'installment', 'one-time', 'partial'], 
-        default: 'full' 
+      paymentStatus: {
+        type: String,
+        // 'completed' is legacy — written by an older schema and still present on
+        // real accounts. Mongoose validates the ENTIRE document on save(), so
+        // leaving it out meant one stale enrolment froze the whole user: every
+        // save() threw, which silently broke Google login AND payment activation
+        // for those accounts. Kept accepted rather than dropped, so nobody's
+        // existing record becomes unwritable.
+        enum: ['full', 'installment', 'one-time', 'partial', 'completed'],
+        default: 'full'
       },
       amountPaid: { type: Number, default: 0 },
       purchasedAt: { type: Date, default: Date.now },

@@ -235,8 +235,15 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
         const isTrialNow = pendingOrder.planType === 'trial';
         const wasTrialUsedBefore = user.biteSizeSubscription?.trialUsed || false;
 
-        user.biteSizeSubscription = { status: 'active', planType: pendingOrder.planType, expiresAt: newExpirationDate, trialUsed: isTrialNow ? true : wasTrialUsedBefore };
-        await user.save();
+        // Written with an atomic $set rather than user.save(). save() validates the
+        // whole document, so any unrelated legacy value elsewhere on the account
+        // (e.g. an old enrolledCourses.paymentStatus) would throw here — taking the
+        // customer's money and leaving the subscription off. Money paths must not
+        // depend on the rest of the record being valid.
+        await User.updateOne(
+            { _id: userId },
+            { $set: { biteSizeSubscription: { status: 'active', planType: pendingOrder.planType, expiresAt: newExpirationDate, trialUsed: isTrialNow ? true : wasTrialUsedBefore } } }
+        );
 
         res.json({ success: true, message: "Payment verified, subscription activated!" });
     } catch (err) {
@@ -307,13 +314,15 @@ router.post('/admin/reconcile-payments', adminOnly, async (req, res) => {
                 const baseDate = (currentExpiry && new Date(currentExpiry) > new Date())
                     ? new Date(currentExpiry) : new Date();
 
-                user.biteSizeSubscription = {
-                    status: 'active',
-                    planType: order.planType,
-                    expiresAt: new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000),
-                    trialUsed: order.planType === 'trial' ? true : (user.biteSizeSubscription?.trialUsed || false)
-                };
-                await user.save();
+                await User.updateOne(
+                    { _id: user._id },
+                    { $set: { biteSizeSubscription: {
+                        status: 'active',
+                        planType: order.planType,
+                        expiresAt: new Date(baseDate.getTime() + daysToAdd * 24 * 60 * 60 * 1000),
+                        trialUsed: order.planType === 'trial' ? true : (user.biteSizeSubscription?.trialUsed || false)
+                    } } }
+                );
 
                 console.log(`✅ [admin:reconcile] Activated ${order.planType} for user ${user._id} from payment ${captured.id}`);
                 results.fulfilled.push({

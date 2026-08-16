@@ -1,31 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Home, BookOpen, Crown, User } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 const MobileBottomNav = () => {
     const location = useLocation();
+    const navigate = useNavigate();
     const currentPath = location.pathname;
+    const { user, requireAuth } = useAuth();
 
-    const [user, setUser] = useState(() => {
-        try {
-            return JSON.parse(localStorage.getItem('user'));
-        } catch (e) {
-            return null;
-        }
-    });
-
-    useEffect(() => {
-        const syncUser = () => {
-            try {
-                setUser(JSON.parse(localStorage.getItem('user')));
-            } catch (e) {
-                setUser(null);
-            }
-        };
-        syncUser();
-        window.addEventListener('storage', syncUser);
-        return () => window.removeEventListener('storage', syncUser);
-    }, []);
 
     // PRO subscription status check
     const subscription = user?.biteSizeSubscription;
@@ -105,11 +88,19 @@ const MobileBottomNav = () => {
                     );
                 }
 
+                const handleClick = (e) => {
+                    triggerHaptic();
+                    if (item.path === '/profile' && !user) {
+                        e.preventDefault();
+                        requireAuth(() => navigate('/profile'));
+                    }
+                };
+
                 return (
                     <Link
                         key={item.label}
                         to={item.path}
-                        onClick={triggerHaptic}
+                        onClick={handleClick}
                         className={`flex flex-col items-center gap-0.5 text-[11px] font-bold tracking-wider transition-all duration-300 py-1.5 px-3 rounded-2xl ${
                             isActive
                                 ? 'text-[#008a45] scale-105 bg-[#008a45]/10 border border-[#008a45]/20 shadow-[0_0_12px_rgba(0,138,69,0.3)]'

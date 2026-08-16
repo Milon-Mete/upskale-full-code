@@ -10,6 +10,8 @@ import { BASE_URL } from '../config';
 import MobileBottomNav from '../components/MobileBottomNav';
 
 
+import { useAuth } from '../context/AuthContext';
+
 const IconMap = {
     FileSpreadsheet: FileSpreadsheet,
     Presentation: Presentation,
@@ -20,6 +22,7 @@ const IconMap = {
 
 const PremiumPage = () => {
     const navigate = useNavigate();
+    const { openLoginModal } = useAuth();
     const sliderRef = useRef(null);
     
     const [user, setUser] = useState(null);
@@ -34,7 +37,7 @@ const PremiumPage = () => {
         const storedUser = localStorage.getItem('user');
 
         if (!storedUser) {
-            navigate('/login');
+            setLoading(false);
             return;
         }
 
@@ -42,13 +45,11 @@ const PremiumPage = () => {
             const parsedUser = JSON.parse(storedUser);
             setUser(parsedUser);
 
-            // 🔴 FIXED: Look at the global subscription object, NOT enrolledCourses
             const sub = parsedUser.biteSizeSubscription;
             
             if (sub && sub.status === 'active') {
                 setActivePlan(sub);
 
-                // 🔴 FIXED: Use the actual expiresAt date from the database
                 const expiryDate = new Date(sub.expiresAt);
                 const today = new Date();
                 const diffTime = expiryDate - today;
@@ -58,11 +59,11 @@ const PremiumPage = () => {
             }
         } catch (error) {
             console.error("Error parsing user data:", error);
-            navigate('/login');
         } finally {
             setLoading(false);
         }
     }, [navigate]);
+
 
     useEffect(() => {
         const fetchCourses = async () => {

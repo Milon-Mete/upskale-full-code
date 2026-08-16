@@ -11,6 +11,7 @@ import Navbar from '../components/Navbar';
 import Accreditations from '../components/Accreditations';
 import { BASE_URL } from '../config';
 import { useCart } from '../context/CartContext';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = `${BASE_URL}`;
 
@@ -19,6 +20,7 @@ const DynamicCoursePage = () => {
   const { slug } = useParams();
 
   const { addToCart } = useCart();
+  const { user: authUser, openLoginModal } = useAuth();
 
   const [isPricingVisible, setIsPricingVisible] = useState(false);
   const pricingSectionRef = useRef(null);
@@ -27,7 +29,8 @@ const DynamicCoursePage = () => {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(authUser || null);
+
 
   // --- 🔴 SILENT BACKGROUND USER REFRESH ---
   useEffect(() => {
@@ -361,11 +364,12 @@ const DynamicCoursePage = () => {
               </button>
             ) : (
               <button
-                onClick={() => navigate('/login')}
-                className="text-sm font-bold bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-lg transition-colors"
+                onClick={() => openLoginModal()}
+                className="text-sm font-bold bg-white/5 border border-white/10 hover:bg-white/10 text-white px-5 py-2.5 rounded-lg transition-colors cursor-pointer"
               >
                 Log In
               </button>
+
             )}
           </div>
         </nav>

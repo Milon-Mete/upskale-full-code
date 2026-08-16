@@ -11,11 +11,13 @@ import {
 import Navbar from '../components/Navbar';
 import { BASE_URL } from '../config';
 import MobileBottomNav from '../components/MobileBottomNav';
+import { useAuth } from '../context/AuthContext';
 
 const API_BASE_URL = `${BASE_URL}`;
 
 const ProfilePage = () => {
     const navigate = useNavigate();
+    const { openLoginModal } = useAuth();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [copied, setCopied] = useState(false);
@@ -38,12 +40,10 @@ const ProfilePage = () => {
     const [badges, setBadges] = useState([]);
 
     const handleCopyLink = () => {
-        if (user && user._id) {
-            const referUrl = `${window.location.origin}?refer=${user._id}`;
-            navigator.clipboard.writeText(referUrl);
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        }
+        const link = `${window.location.origin}/register?ref=${user?._id}`;
+        navigator.clipboard.writeText(link);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
 useEffect(() => {
@@ -70,7 +70,7 @@ useEffect(() => {
         const storedUser = localStorage.getItem('user');
 
         if (!storedUser && !isGoogleOAuthRedirect) {
-            navigate('/login');
+            setLoading(false);
             return;
         }
 
@@ -326,10 +326,32 @@ useEffect(() => {
             };
         });
 
+    if (!loading && !user) {
+        return (
+            <div className="min-h-screen bg-[#050505] text-white font-sans flex flex-col">
+                <Navbar />
+                <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="w-16 h-16 bg-[#008a45]/20 text-[#008a45] rounded-full flex items-center justify-center mb-4">
+                        <User size={32} />
+                    </div>
+                    <h2 className="text-2xl font-black mb-2">Access Your Profile</h2>
+                    <p className="text-gray-400 text-sm max-w-sm mb-6">Log in to view your enrolled courses, certificates, and dashboard.</p>
+                    <button
+                        onClick={() => openLoginModal({ onSuccess: () => fetchUserProfile() })}
+                        className="px-8 py-3 bg-[#008a45] hover:bg-[#007038] text-white font-bold rounded-xl shadow-lg transition-all cursor-pointer"
+                    >
+                        Log In Now
+                    </button>
+                </div>
+                <MobileBottomNav />
+            </div>
+        );
+    }
+
     const enrolledCount = allEnrollments.length;
     const earnedCertificates = validCertificates.length;
-    const totalReferrals = user.referralHistory?.length || 0;
-    const purchasedReferrals = user.referralHistory?.filter(ref => ref.status === 'successful').length || 0;
+    const totalReferrals = user?.referralHistory?.length || 0;
+    const purchasedReferrals = user?.referralHistory?.filter(ref => ref.status === 'successful').length || 0;
 
     const handleWhatsAppShare = () => {
         const referralLink = `${window.location.origin}/register?ref=${user?._id}`;
@@ -341,6 +363,7 @@ useEffect(() => {
     return (
         <div className="min-h-screen bg-[#050505] text-white font-sans">
             <Navbar />
+
 
             {/* Ambient glow */}
             <div className="fixed inset-0 pointer-events-none">

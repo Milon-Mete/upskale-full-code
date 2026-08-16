@@ -1178,10 +1178,11 @@ const BiteSizeCoursePage = () => {
                     } else if (premiumRes.status === 401 || premiumRes.status === 403) {
                         console.warn("Session expired.");
                         localStorage.removeItem('user');
-                        alert("Your session has expired. Please log in again.");
-                        navigate('/login', { replace: true });
+                        window.dispatchEvent(new Event("storage"));
+                        window.dispatchEvent(new CustomEvent('trigger-login-modal', { detail: { message: "Your session has expired. Please log in again." } }));
                         return;
                     }
+
                 }
             } catch (error) {
                 console.error("Error:", error);

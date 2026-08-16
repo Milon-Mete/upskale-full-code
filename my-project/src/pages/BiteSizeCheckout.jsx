@@ -107,11 +107,12 @@ const BiteSizeCheckout = () => {
 
             const orderData = await initRes.json();
             if (initRes.status === 401 || initRes.status === 403) {
-            localStorage.removeItem('user'); // Nuke the stale frontend state
-            alert("Your session has expired. Please log in again to continue.");
-            window.location.href = '/login'; // Force redirect
-            return;
-        }
+                localStorage.removeItem('user');
+                window.dispatchEvent(new Event("storage"));
+                setShowLoginModal(true);
+                return;
+            }
+
 
         if (!initRes.ok) throw new Error(orderData.message);
 

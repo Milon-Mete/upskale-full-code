@@ -17,8 +17,11 @@ import CourseEnrollmentStats from '../components/CourseEnrollmentStats';
 import MasterclassEnrollmentStats from '../components/MasterclassEnrollmentStats';
 import BiteSizeEnrollmentStats from '../components/BiteSizeEnrollmentStats';
 
+import { useAuth } from '../context/AuthContext';
+
 const Dashboard = () => {
   const navigate = useNavigate();
+  const { openLoginModal } = useAuth();
   const [activeTab, setActiveTab] = useState('cohort'); 
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +30,11 @@ const Dashboard = () => {
   useEffect(() => {
     const checkAdminAccess = () => {
       const storedUser = localStorage.getItem('user');
-      if (!storedUser) { navigate('/login'); return; }
+      if (!storedUser) { 
+        openLoginModal({ onSuccess: () => checkAdminAccess() });
+        setIsLoading(false);
+        return; 
+      }
       try {
         const user = JSON.parse(storedUser);
         if (user.role !== 'admin') {
@@ -36,13 +43,14 @@ const Dashboard = () => {
         }
         setIsAuthorized(true);
       } catch (error) {
-        navigate('/login');
+        openLoginModal({ onSuccess: () => checkAdminAccess() });
       } finally {
         setIsLoading(false);
       }
     };
     checkAdminAccess();
-  }, [navigate]);
+  }, [navigate, openLoginModal]);
+
 
   if (isLoading) {
     return (

@@ -26,6 +26,7 @@ import RecartPage from './pages/Recordedcartpage';
 
 // Masterclass & Certificates
 import MasterclassLanding from './pages/masterclass/MasterclassLanding';
+import EcommerceTshirtCourse from './pages/EcommerceTshirtCourse';
 import StudentCertificateView from './pages/StudentCertificateView';
 
 import BiteSizeCoursePage from './pages/Bbitsize/BiteSizeCoursePage'
@@ -111,6 +112,7 @@ function App() {
           
           {/* Masterclass & Certificate */}
           <Route path="/masterclass/:slug" element={<MasterclassLanding />} />
+          <Route path="/ecommerce-tshirt-business" element={<EcommerceTshirtCourse />} />
           <Route path="/view-certificate/:id" element={<StudentCertificateView />} />
           <Route path="/library" element={<MyLibraryPage />} />
 

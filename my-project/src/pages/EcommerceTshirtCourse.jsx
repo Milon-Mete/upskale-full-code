@@ -324,6 +324,15 @@ const EcommerceTshirtCourse = () => {
 
           {/* Track picker card */}
           <div className="lg:sticky lg:top-24">
+            {/* Course banner */}
+            <div className="rounded-2xl overflow-hidden mb-4" style={{ border: `1px solid ${BORDER}`, boxShadow: '0 10px 40px rgba(0,0,0,0.08)' }}>
+              <img
+                src="/ecommerce-course-banner.jpg"
+                alt="How to start an e-commerce business — step by step guide covering finding a niche, building a store, getting traffic and making sales"
+                className="w-full h-auto block"
+              />
+            </div>
+
             <div className="rounded-2xl p-6" style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
               <p className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: MUTE }}>Choose your structure</p>
 

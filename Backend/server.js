@@ -1145,6 +1145,7 @@ app.use('/api/promotions', require('./routes/promotion'));
 app.use('/api/cohorts', require('./routes/cohortRoutes')) 
 app.use('/api/bitesize-courses', require('./routes/biteSizeRoutes'));
 app.use('/api/engagement', require('./routes/engagement'));
+app.use('/api/course-payment', require('./routes/paymentCourse'));
 
 // =============================================
 // 🔄 SUBSCRIPTION AUTO-EXPIRY CRON JOB

@@ -3,9 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import {
   Sparkles, Check, CheckCircle2, Clock, Calendar, ChevronDown,
   Palette, Package, Megaphone, Wallet, Rocket, GraduationCap,
-  ShoppingBag, Users, Target, ArrowRight
+  ShoppingBag, Users, Target, ArrowRight, Star, ShieldCheck, Loader2
 } from 'lucide-react';
 import Accreditations from '../components/Accreditations';
+import { BASE_URL } from '../config';
+
+const COURSE_KEY = 'ecommerce-tshirt-business';
+
+const loadScript = (src) => new Promise((resolve) => {
+  if (document.querySelector(`script[src="${src}"]`)) return resolve(true);
+  const s = document.createElement('script');
+  s.src = src;
+  s.onload = () => resolve(true);
+  s.onerror = () => resolve(false);
+  document.body.appendChild(s);
+});
 
 // ================= THEME TOKENS (shared with MasterclassLanding) =================
 const CLAY = '#c96442';
@@ -18,10 +30,11 @@ const INK = '#1a1a18';
 const MUTE = '#6b675f';
 const LOGO_URL = 'https://res.cloudinary.com/villain/image/upload/v1770662332/20250730_170553_0000_xyfhoc.png';
 
-// Point this at the real checkout/enquiry link once the course exists as a
-// product. Left empty deliberately — an empty value makes every CTA scroll to
-// the enrolment section instead, so nothing links to a page that isn't there.
-const ENROLL_URL = '';
+const MENTOR = {
+  name: 'Soumyadeep Datta',
+  role: 'AI & Business Skills Mentor',
+  image: '/soumyadeep.png'
+};
 
 // ================= CURRICULUM (from the course document) =================
 
@@ -152,24 +165,98 @@ const EcommerceTshirtCourse = () => {
   const navigate = useNavigate();
   const [track, setTrack] = useState('crash');
   const [openMonth, setOpenMonth] = useState(0);
+  const [pricing, setPricing] = useState(null);
+  const [paying, setPaying] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
   const enrolRef = useRef(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const t = TRACKS[track];
+  // Prices come from the server, so changing a fee doesn't need a rebuild —
+  // and the amount charged is decided there regardless of what's rendered here.
+  useEffect(() => {
+    fetch(`${BASE_URL}/course-payment/catalogue/${COURSE_KEY}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.success) setPricing(d.tracks); })
+      .catch(() => {});
+  }, []);
 
-  const goEnrol = () => {
-    if (ENROLL_URL) { window.location.href = ENROLL_URL; return; }
-    enrolRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const t = TRACKS[track];
+  const price = pricing?.[track];
+
+  const getUser = () => {
+    try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
+  };
+
+  const handleEnrol = async () => {
+    const user = getUser();
+    if (!user) {
+      navigate('/login', { state: { returnTo: '/ecommerce-tshirt-business' } });
+      return;
+    }
+    if (paying) return;
+    setPaying(true);
+
+    try {
+      const orderRes = await fetch(`${BASE_URL}/course-payment/create-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ courseKey: COURSE_KEY, trackKey: track })
+      });
+      const data = await orderRes.json();
+      if (!orderRes.ok || !data.success) {
+        alert(data.message || 'Could not start the payment. Please try again.');
+        setPaying(false);
+        return;
+      }
+
+      const ok = await loadScript('https://checkout.razorpay.com/v1/checkout.js');
+      if (!ok) { alert('Razorpay could not load. Check your internet connection.'); setPaying(false); return; }
+
+      const rzp = new window.Razorpay({
+        key: data.key_id,
+        amount: data.amount * 100,
+        currency: 'INR',
+        name: 'UPSKALE',
+        description: data.description,
+        order_id: data.order_id,
+        handler: async (response) => {
+          const verifyRes = await fetch(`${BASE_URL}/course-payment/verify-payment`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(response)
+          });
+          const verify = await verifyRes.json();
+          setPaying(false);
+          if (verify.success) setEnrolled(true);
+          else alert('Payment went through but confirmation failed. Please contact support with your payment ID.');
+        },
+        prefill: { name: user.name, email: user.email, contact: user.phone },
+        theme: { color: CLAY },
+        modal: { ondismiss: () => setPaying(false) }
+      });
+      rzp.on('payment.failed', (r) => {
+        setPaying(false);
+        alert(`Payment failed: ${r.error?.description || 'Please try again.'}`);
+      });
+      rzp.open();
+    } catch (e) {
+      console.error(e);
+      alert('Payment could not be started. Please try again.');
+      setPaying(false);
+    }
   };
 
   const CtaButton = ({ label, className = '' }) => (
     <button
-      onClick={goEnrol}
-      className={`rounded-xl font-bold text-white transition-transform active:scale-[0.98] inline-flex items-center justify-center gap-2 ${className}`}
+      onClick={handleEnrol}
+      disabled={paying}
+      className={`rounded-xl font-bold text-white transition-transform active:scale-[0.98] inline-flex items-center justify-center gap-2 disabled:opacity-70 ${className}`}
       style={{ background: `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}
     >
-      {label} <ArrowRight size={18} />
+      {paying ? <><Loader2 size={18} className="animate-spin" /> Processing…</> : <>{label} <ArrowRight size={18} /></>}
     </button>
   );
 
@@ -263,11 +350,42 @@ const EcommerceTshirtCourse = () => {
                 );
               })}
 
-              <p className="text-[13px] leading-relaxed mt-2 mb-5" style={{ color: MUTE }}>{t.detail}</p>
-              <CtaButton label="Enquire About This Course" className="w-full py-4 text-base" />
-              <p className="text-[11px] text-center mt-3" style={{ color: MUTE }}>
-                Talk to us about batch timings and fees
-              </p>
+              <p className="text-[13px] leading-relaxed mt-2 mb-4" style={{ color: MUTE }}>{t.detail}</p>
+
+              {/* Fee — rendered from the server catalogue */}
+              <div className="rounded-xl p-4 mb-4 text-center" style={{ background: CREAM_ALT, border: `1px solid ${BORDER}` }}>
+                {price ? (
+                  <>
+                    <div className="flex items-baseline justify-center gap-1.5">
+                      <span className="text-3xl font-black" style={{ color: INK }}>₹{price.amount.toLocaleString('en-IN')}</span>
+                      {track === 'weekend' && <span className="text-sm font-bold" style={{ color: MUTE }}>/ month</span>}
+                    </div>
+                    <p className="text-[12px] font-semibold mt-1" style={{ color: MUTE }}>{price.note}</p>
+                    {track === 'weekend' && (
+                      <p className="text-[11px] mt-1.5" style={{ color: MUTE }}>
+                        You pay for Month 1 today — not the full ₹12,000
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-[13px] font-semibold" style={{ color: MUTE }}>Loading fee…</p>
+                )}
+              </div>
+
+              {enrolled ? (
+                <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(21,135,90,0.06)', border: '1px solid rgba(21,135,90,0.3)' }}>
+                  <CheckCircle2 size={32} className="mx-auto mb-2" style={{ color: '#15875a' }} />
+                  <p className="font-black" style={{ color: INK }}>Enrolment confirmed</p>
+                  <p className="text-[13px] mt-1" style={{ color: MUTE }}>We'll be in touch with batch details shortly.</p>
+                </div>
+              ) : (
+                <>
+                  <CtaButton label={`Enrol — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="w-full py-4 text-base" />
+                  <p className="text-[11px] text-center mt-3 flex items-center justify-center gap-1.5" style={{ color: MUTE }}>
+                    <ShieldCheck size={12} /> Secure payment via Razorpay
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -429,6 +547,31 @@ const EcommerceTshirtCourse = () => {
         </div>
       </section>
 
+      {/* ===== MENTOR ===== */}
+      <section className="py-20 px-5" style={{ background: CREAM_ALT, borderTop: `1px solid ${BORDER}` }}>
+        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 md:gap-14 items-center">
+          <div className="relative rounded-[2rem] overflow-hidden flex items-end justify-center order-1"
+            style={{ background: `radial-gradient(120% 85% at 50% 100%, ${CLAY}26, ${CARD})`, border: `1px solid ${BORDER}`, minHeight: '340px' }}>
+            <div className="absolute bottom-0 w-48 h-48 rounded-full blur-3xl" style={{ background: `${CLAY}30` }} />
+            <img src={MENTOR.image} alt={MENTOR.name}
+              className="relative z-10 max-h-[420px] w-auto object-contain"
+              style={{ filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.18))' }} />
+          </div>
+          <div className="order-2">
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5"
+              style={{ background: CARD, color: CLAY, border: `1px solid ${BORDER}` }}>
+              <Star size={12} className="fill-current" /> Your Mentor
+            </span>
+            <h2 className="text-3xl md:text-5xl font-black mb-2 leading-tight" style={{ color: INK }}>{MENTOR.name}</h2>
+            <p className="font-semibold text-lg mb-5" style={{ color: CLAY }}>{MENTOR.role}</p>
+            <p className="text-lg leading-relaxed" style={{ color: MUTE }}>
+              Every class is taught live — students design, price and launch alongside the
+              mentor rather than watching recordings, with feedback on their own brand as it takes shape.
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* ===== ACCREDITATIONS ===== */}
       <Accreditations accent={CLAY} />
 
@@ -439,19 +582,25 @@ const EcommerceTshirtCourse = () => {
             Ready to start the T-shirt brand?
           </h2>
           <p className="text-lg mb-8" style={{ color: MUTE }}>
-            Tell us which structure suits your schedule — the {t.short.toLowerCase()} — and we'll share
-            batch timings, fees and the next start date.
+            You've chosen the {t.short.toLowerCase()}. Secure the seat now and we'll share
+            batch timings and the next start date.
           </p>
           <div className="rounded-2xl p-6 mb-6" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
             <div className="flex items-center justify-center gap-2 mb-3">
               <Calendar size={18} style={{ color: CLAY }} />
               <span className="font-black" style={{ color: INK }}>{t.label}</span>
             </div>
-            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] font-semibold" style={{ color: MUTE }}>
+            <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 text-[13px] font-semibold mb-3" style={{ color: MUTE }}>
               {t.meta.map((m, i) => <span key={i}>{m}</span>)}
             </div>
+            {price && (
+              <p className="text-2xl font-black" style={{ color: INK }}>
+                ₹{price.amount.toLocaleString('en-IN')}
+                {track === 'weekend' && <span className="text-sm font-bold" style={{ color: MUTE }}> / month</span>}
+              </p>
+            )}
           </div>
-          <CtaButton label="Enquire About This Course" className="px-8 py-4 text-lg" />
+          <CtaButton label={`Enrol — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="px-8 py-4 text-lg" />
         </div>
       </section>
 
@@ -463,7 +612,7 @@ const EcommerceTshirtCourse = () => {
       <div className="lg:hidden fixed bottom-0 left-0 w-full z-50 backdrop-blur-md"
         style={{ background: 'rgba(255,255,255,0.95)', borderTop: `1px solid ${BORDER}`, paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="px-4 py-3">
-          <CtaButton label="Enquire About This Course" className="w-full py-4 text-base" />
+          <CtaButton label={`Enrol — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="w-full py-4 text-base" />
         </div>
       </div>
       <div className="lg:hidden h-24" />

@@ -163,7 +163,7 @@ const TRACKS = {
 
 const EcommerceTshirtCourse = () => {
   const navigate = useNavigate();
-  const [track, setTrack] = useState('crash');
+  const [track, setTrack] = useState('weekend');
   const [openMonth, setOpenMonth] = useState(0);
   const [pricing, setPricing] = useState(null);
   const [paying, setPaying] = useState(false);
@@ -188,7 +188,18 @@ const EcommerceTshirtCourse = () => {
     try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
   };
 
-  const handleEnrol = async () => {
+  // The API accepts a cookie OR a bearer token. The cookie is cross-site
+  // (upskale.co → api.upskale.co) and browsers that block third-party cookies
+  // drop it, so the token is sent explicitly the way the rest of the app does.
+  const authHeaders = () => {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {})
+    };
+  };
+
+  const handleEnroll = async () => {
     const user = getUser();
     if (!user) {
       navigate('/login', { state: { returnTo: '/ecommerce-tshirt-business' } });
@@ -200,13 +211,21 @@ const EcommerceTshirtCourse = () => {
     try {
       const orderRes = await fetch(`${BASE_URL}/course-payment/create-order`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authHeaders(),
         credentials: 'include',
         body: JSON.stringify({ courseKey: COURSE_KEY, trackKey: track })
       });
       const data = await orderRes.json();
       if (!orderRes.ok || !data.success) {
-        alert(data.message || 'Could not start the payment. Please try again.');
+        // A 401 here means the session has lapsed rather than anything being
+        // broken — say so and send them to log in, instead of a dead-end
+        // "try again" that will fail identically every time.
+        if (orderRes.status === 401) {
+          alert('Your session has expired. Please log in again to continue.');
+          navigate('/login', { state: { returnTo: '/ecommerce-tshirt-business' } });
+        } else {
+          alert(data.message || 'Could not start the payment. Please try again.');
+        }
         setPaying(false);
         return;
       }
@@ -224,7 +243,7 @@ const EcommerceTshirtCourse = () => {
         handler: async (response) => {
           const verifyRes = await fetch(`${BASE_URL}/course-payment/verify-payment`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
             credentials: 'include',
             body: JSON.stringify(response)
           });
@@ -251,7 +270,7 @@ const EcommerceTshirtCourse = () => {
 
   const CtaButton = ({ label, className = '' }) => (
     <button
-      onClick={handleEnrol}
+      onClick={handleEnroll}
       disabled={paying}
       className={`rounded-xl font-bold text-white transition-transform active:scale-[0.98] inline-flex items-center justify-center gap-2 disabled:opacity-70 ${className}`}
       style={{ background: `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}
@@ -384,12 +403,12 @@ const EcommerceTshirtCourse = () => {
               {enrolled ? (
                 <div className="rounded-xl p-5 text-center" style={{ background: 'rgba(21,135,90,0.06)', border: '1px solid rgba(21,135,90,0.3)' }}>
                   <CheckCircle2 size={32} className="mx-auto mb-2" style={{ color: '#15875a' }} />
-                  <p className="font-black" style={{ color: INK }}>Enrolment confirmed</p>
+                  <p className="font-black" style={{ color: INK }}>Enrollment confirmed</p>
                   <p className="text-[13px] mt-1" style={{ color: MUTE }}>We'll be in touch with batch details shortly.</p>
                 </div>
               ) : (
                 <>
-                  <CtaButton label={`Enrol — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="w-full py-4 text-base" />
+                  <CtaButton label={`Enroll — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="w-full py-4 text-base" />
                   <p className="text-[11px] text-center mt-3 flex items-center justify-center gap-1.5" style={{ color: MUTE }}>
                     <ShieldCheck size={12} /> Secure payment via Razorpay
                   </p>
@@ -609,7 +628,7 @@ const EcommerceTshirtCourse = () => {
               </p>
             )}
           </div>
-          <CtaButton label={`Enrol — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="px-8 py-4 text-lg" />
+          <CtaButton label={`Enroll — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="px-8 py-4 text-lg" />
         </div>
       </section>
 
@@ -621,7 +640,7 @@ const EcommerceTshirtCourse = () => {
       <div className="lg:hidden fixed bottom-0 left-0 w-full z-50 backdrop-blur-md"
         style={{ background: 'rgba(255,255,255,0.95)', borderTop: `1px solid ${BORDER}`, paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="px-4 py-3">
-          <CtaButton label={`Enrol — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="w-full py-4 text-base" />
+          <CtaButton label={`Enroll — ₹${price ? price.amount.toLocaleString('en-IN') : '…'}`} className="w-full py-4 text-base" />
         </div>
       </div>
       <div className="lg:hidden h-24" />

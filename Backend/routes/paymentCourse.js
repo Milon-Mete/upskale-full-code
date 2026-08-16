@@ -138,25 +138,15 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
         order.fulfilledVia = 'frontend:verify-payment';
         await order.save();
 
-        // Recorded with an atomic $push rather than user.save(). save() validates
-        // the whole document, so unrelated legacy data elsewhere on the account
-        // would throw here — after Razorpay has already taken the money. A money
-        // path must not depend on the rest of the record being valid.
-        await User.updateOne(
-            { _id: userId },
-            {
-                $push: {
-                    enrolledCourses: {
-                        itemModel: 'Course',
-                        planType: order.planType,
-                        paymentStatus: order.paymentType === 'installment' ? 'partial' : 'full',
-                        amountPaid: order.amountPaid,
-                        purchasedAt: new Date()
-                    }
-                }
-            }
-        );
-
+        // The paid Order is the record of enrolment for this course.
+        //
+        // Deliberately NOT pushed into user.enrolledCourses: every entry there
+        // requires an `item` ObjectId pointing at a product document, and this
+        // course has no such record. Pushing without it would write a subdocument
+        // that fails validation, and because save() validates the whole user, the
+        // account would then throw on every future write — silently breaking that
+        // customer's login and any later payment. That is the exact failure that
+        // stranded a ₹99 payment on this platform; not repeating it here.
         console.log(`✅ Course enrolment recorded for user ${userId} (order ${razorpay_order_id})`);
         res.json({ success: true, message: 'Payment verified, enrolment confirmed!' });
     } catch (err) {

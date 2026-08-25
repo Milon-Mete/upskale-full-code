@@ -120,10 +120,40 @@ const otpVerifyLimiter = rateLimit({
 
 
 // ==========================================
+// 🔑 ADMIN ACCOUNTS
+// ==========================================
+// Admin is granted by email at Google sign-in rather than set by hand in the
+// DB. Reapplying it on every login means the role survives an account being
+// recreated, and there is one obvious place to audit who holds admin.
+// Compared lowercased — Google returns the address as the user typed it.
+const ADMIN_EMAILS = [
+    'soumyadeepdatta5@gmail.com',
+    'anythingcustomercare@gmail.com',
+    'debkanta1993@gmail.com'
+];
+const isAdminEmail = (e) => !!e && ADMIN_EMAILS.includes(String(e).trim().toLowerCase());
+
+// ==========================================
+// 📱 PHONE / OTP SIGN-IN — RETIRED
+// ==========================================
+// Sign-in is Google-only. These stay mounted rather than deleted so an older
+// cached frontend gets a clear, explainable answer instead of a 404 that
+// looks like an outage. The original handlers below are renamed, not removed,
+// so the flow can be restored quickly if this needs reversing.
+const OTP_RETIRED = (req, res) => res.status(410).json({
+    success: false,
+    otpRetired: true,
+    message: 'Phone/OTP sign-in has been discontinued. Please continue with Google.'
+});
+
+app.post('/api/send-otp', OTP_RETIRED);
+app.post('/api/verify-otp', OTP_RETIRED);
+
+// ==========================================
 // 📱 AISENSY WHATSAPP OTP VERIFICATION
 // ==========================================
 
-app.post('/api/send-otp', otpSendLimiter, async (req, res) => {
+app.post('/api/__disabled_send-otp', otpSendLimiter, async (req, res) => {
     let { phone } = req.body;
     
     if (!phone) return res.status(400).json({ message: "Phone number required" });
@@ -243,7 +273,7 @@ app.post('/api/send-otp', otpSendLimiter, async (req, res) => {
     }
 });
 
-app.post('/api/verify-otp', otpVerifyLimiter, async (req, res) => {
+app.post('/api/__disabled_verify-otp', otpVerifyLimiter, async (req, res) => {
     let { phone, otp } = req.body;
 
     if (!phone || !otp) return res.status(400).json({ message: "Phone and OTP required" });
@@ -483,6 +513,14 @@ app.get('/api/auth/google/callback', async (req, res) => {
                 role: 'student'
             });
             await user.save();
+        }
+
+        // Keep the admin allowlist authoritative on every sign-in.
+        const shouldBeAdmin = isAdminEmail(user.email);
+        if (shouldBeAdmin && user.role !== 'admin') {
+            await User.updateOne({ _id: user._id }, { $set: { role: 'admin' } });
+            user.role = 'admin';
+            console.log(`🔑 Admin role applied to ${user.email}`);
         }
 
         const isNewGoogleUser = !user.phone;

@@ -843,7 +843,7 @@ app.post('/api/admin/issue-certificate', adminOnly, async (req, res) => {
     // lookup would make it impossible to issue those students a certificate.
     let user = null;
     if (phone) {
-      let cleanPhone = String(phone).replace(/[s-]/g, '');
+      let cleanPhone = String(phone).replace(/[\s-]/g, '');
       if (cleanPhone.length === 10) cleanPhone = `+91${cleanPhone}`;
       else if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) cleanPhone = `+${cleanPhone}`;
       user = await User.findOne({ phone: cleanPhone });

@@ -198,6 +198,7 @@ const CertificateSystem = () => {
         course: '',
         date: '',
         phone: '',
+        email: '',
         planType: 'recorded',
         score: '',
         certId: '',
@@ -329,7 +330,7 @@ const CertificateSystem = () => {
     };
 
     const handleIssueToUser = async () => {
-        if (!formData.phone || !formData.course || !formData.date) return alert("Please fill Phone, Course, and Date.");
+        if ((!formData.phone && !formData.email) || !formData.course || !formData.date) return alert("Enter a phone number OR an email, plus Course and Date.");
         setIsIssuing(true);
 
         let cleanPhone = formData.phone.replace(/[\s-]/g, '');
@@ -346,7 +347,8 @@ const CertificateSystem = () => {
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    phone: cleanPhone,
+                    phone: cleanPhone || undefined,
+                    email: formData.email ? formData.email.trim().toLowerCase() : undefined,
                     courseName: formData.course,
                     certificateDate: formData.date,
                     planType: formData.planType,
@@ -452,6 +454,13 @@ const CertificateSystem = () => {
                             {isSearching ? <Loader2 className="animate-spin" size={18} /> : <Search size={18} />}
                         </button>
                     </div>
+                    {/* Google-only sign-in means newer accounts carry an email and no
+                        phone, so a phone-only search would never find them. */}
+                    <input
+                        type="email" name="email" value={formData.email} onChange={handleChange}
+                        className="mt-2 w-full p-2 border border-blue-200 rounded text-sm outline-none"
+                        placeholder="…or enter Email (for Google sign-ins)"
+                    />
                 </div>
 
                 <div className="space-y-4 mb-8">

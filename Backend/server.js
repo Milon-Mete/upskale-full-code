@@ -831,15 +831,35 @@ app.get('/api/admin/all-users', adminOnly, async (req, res) => {
 
 // 🔒 Added adminOnly to prevent fake certificate generation
 app.post('/api/admin/issue-certificate', adminOnly, async (req, res) => {
-  const { phone, courseName, certificateDate, planType, score, itemModel } = req.body;
+  const { phone, email, courseName, certificateDate, planType, score, itemModel } = req.body;
 
-  if (!phone || !courseName || !certificateDate) {
-    return res.status(400).json({ message: "Phone, Course Name, and Date are required" });
+  if ((!phone && !email) || !courseName || !certificateDate) {
+    return res.status(400).json({ message: "A phone number or email, plus Course Name and Date, are required" });
   }
 
   try {
-    const user = await User.findOne({ phone: phone });
-    if (!user) return res.status(404).json({ message: "User not found." });
+    // Look up by phone OR email. Sign-in is Google-only now, so accounts
+    // created from here on have an email and no phone at all — a phone-only
+    // lookup would make it impossible to issue those students a certificate.
+    let user = null;
+    if (phone) {
+      let cleanPhone = String(phone).replace(/[s-]/g, '');
+      if (cleanPhone.length === 10) cleanPhone = `+91${cleanPhone}`;
+      else if (cleanPhone.length === 12 && cleanPhone.startsWith('91')) cleanPhone = `+${cleanPhone}`;
+      user = await User.findOne({ phone: cleanPhone });
+    }
+    if (!user && email) {
+      user = await User.findOne({ email: String(email).trim().toLowerCase() });
+    }
+    if (!user) {
+      return res.status(404).json({
+        message: phone && email
+          ? "No account found with that phone or email."
+          : phone
+            ? "No account found with that phone. If they signed in with Google, use their email instead."
+            : "No account found with that email."
+      });
+    }
 
     let courseObj = null;
     let foundModelType = itemModel || 'Course';
@@ -877,7 +897,7 @@ app.post('/api/admin/issue-certificate', adminOnly, async (req, res) => {
         certificateId: uniqueCertId,
         user: user._id,
         studentName: user.name,
-        phone: user.phone,          
+        phone: user.phone || 'N/A',
         course: courseObj._id,
         itemModel: foundModelType,
         courseName: courseObj.title,

@@ -8,6 +8,8 @@ import '../swipes.css';
 const INTRO_PRICE = 799;
 const RENEWAL_PRICE = 1299;
 const TRIAL_DAYS = 3;
+// Set to true once the autopay routes and Razorpay offers are live on the server.
+const SALES_OPEN = false;
 
 const BENEFITS = [
     { icon: Smartphone, title: 'Made for your phone', text: 'Short lessons you swipe through, anywhere.' },
@@ -54,6 +56,7 @@ const PlanSelectionPage = () => {
     const [processing, setProcessing] = useState(false);
     const [confirmCancel, setConfirmCancel] = useState(false);
     const [message, setMessage] = useState('');
+    const [payMethod, setPayMethod] = useState('upi');
 
     useEffect(() => {
         const script = document.createElement('script');
@@ -81,7 +84,7 @@ const PlanSelectionPage = () => {
     const getsIntro = !subscription?.introUsed;
     const yearPrice = getsIntro ? INTRO_PRICE : RENEWAL_PRICE;
     const chargeDate = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const buyLabel = getsTrial ? 'Start for ₹1' : `Pay ${rupees(yearPrice)}`;
+    const buyLabel = !SALES_OPEN ? 'Opening soon' : getsTrial ? 'Start for ₹1' : `Pay ${rupees(yearPrice)}`;
 
     const handleSubscribe = async () => {
         if (!currentUser) {
@@ -92,7 +95,7 @@ const PlanSelectionPage = () => {
         setMessage('');
         try {
             const initRes = await fetch(`${BASE_URL}/bitesize-courses/subscribe`, {
-                method: 'POST', headers: authHeaders(), credentials: 'include'
+                method: 'POST', headers: authHeaders(), credentials: 'include', body: JSON.stringify({ method: payMethod })
             });
             const init = await initRes.json();
 
@@ -115,6 +118,7 @@ const PlanSelectionPage = () => {
                 name: 'UPSKALE Swipes Pro',
                 description: init.isTrial ? `₹1 trial, then ${rupees(yearPrice)} autopay` : `${rupees(yearPrice)} for the year, on autopay`,
                 prefill: { name: currentUser.name, email: currentUser.email, contact: currentUser.phone },
+                method: { upi: payMethod === 'upi', card: payMethod === 'card', netbanking: false, wallet: false, emandate: false },
                 theme: { color: '#eab308' },
                 modal: { ondismiss: () => setProcessing(false) },
                 handler: async (response) => {
@@ -263,7 +267,22 @@ const PlanSelectionPage = () => {
                                     <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Every year after:</b> {rupees(RENEWAL_PRICE)}</span></li>
                                 </ol>
 
-                                <button onClick={handleSubscribe} disabled={processing} className="hidden lg:flex swipe-cta w-full mt-6 py-4 rounded-xl text-black font-black text-lg items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
+                                <div className={`${SALES_OPEN ? 'grid' : 'hidden'} grid-cols-2 gap-2 mt-5`} role="radiogroup" aria-label="Autopay method">
+                                    {[['upi', 'UPI Autopay'], ['card', 'Card']].map(([value, label]) => (
+                                        <button
+                                            key={value}
+                                            type="button"
+                                            role="radio"
+                                            aria-checked={payMethod === value}
+                                            onClick={() => setPayMethod(value)}
+                                            className={`py-3 rounded-xl border text-sm font-bold transition-colors ${payMethod === value ? 'border-yellow-400 bg-yellow-400/10 text-white' : 'border-white/15 text-gray-400'}`}
+                                        >
+                                            {label}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <button onClick={handleSubscribe} disabled={processing || !SALES_OPEN} className="hidden lg:flex swipe-cta w-full mt-6 py-4 rounded-xl text-black font-black text-lg items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
                                     {processing ? <Loader2 size={20} className="animate-spin" /> : <>{buyLabel} <ArrowRight size={20} /></>}
                                 </button>
 
@@ -281,7 +300,7 @@ const PlanSelectionPage = () => {
 
             {!isActive && (
                 <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d0d]/95 backdrop-blur border-t border-yellow-500/40 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-                    <button onClick={handleSubscribe} disabled={processing} className="swipe-cta w-full py-4 rounded-xl text-black font-black text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
+                    <button onClick={handleSubscribe} disabled={processing || !SALES_OPEN} className="swipe-cta w-full py-4 rounded-xl text-black font-black text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
                         {processing ? <Loader2 size={20} className="animate-spin" /> : <>{buyLabel} <ArrowRight size={20} /></>}
                     </button>
                     <p className="text-[11px] text-gray-400 text-center mt-2">

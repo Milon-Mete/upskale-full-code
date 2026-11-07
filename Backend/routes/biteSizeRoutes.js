@@ -319,22 +319,19 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
 // 2a. SWIPES PRO AUTOPAY (Razorpay Subscriptions)
 // =====================================================
 //
-// One yearly plan of Rs 1299 (RAZORPAY_SWIPES_PLAN_ID). A first-time buyer gets
-// an offer that takes the first year down to Rs 799. Razorpay ties each offer to
+// One yearly plan of Rs 1299. A first-time buyer gets an offer that takes the first year down to Rs 799. Razorpay ties each offer to
 // one payment method, so there is one offer each for UPI and card. Someone who
 // has never had a trial pays Rs 1 now and the first year on day 3.
+const SWIPES_PLAN_ID = 'plan_TxJWDZgQ7X20Wa';
+const SWIPES_OFFER_IDS = { upi: 'offer_TxJtBnWJUWRBQc', card: 'offer_TxJvzlmqJFYBFt' };
 const TRIAL_DAYS = 3;
 const TRIAL_FEE_PAISE = 100;
 const YEARLY_CYCLES = 10;
 
 router.post('/subscribe', requireAuth, async (req, res) => {
     try {
-        const planId = process.env.RAZORPAY_SWIPES_PLAN_ID;
-        const offerIds = { upi: process.env.RAZORPAY_SWIPES_OFFER_ID_UPI, card: process.env.RAZORPAY_SWIPES_OFFER_ID_CARD };
-        if (!planId || !offerIds.upi || !offerIds.card) return res.status(503).json({ message: "Swipes Pro is not available right now." });
-
         const { method } = req.body;
-        if (!offerIds[method]) return res.status(400).json({ message: "Choose UPI or card to continue." });
+        if (!SWIPES_OFFER_IDS[method]) return res.status(400).json({ message: "Choose UPI or card to continue." });
 
         const user = await User.findById(req.user._id).select('biteSizeSubscription').lean();
         if (!user) return res.status(404).json({ message: "User not found" });
@@ -346,13 +343,13 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 
         const isTrial = !sub.trialUsed;
         const options = {
-            plan_id: planId,
+            plan_id: SWIPES_PLAN_ID,
             total_count: YEARLY_CYCLES,
             quantity: 1,
             customer_notify: 1,
             notes: { product: 'swipes', userId: user._id.toString(), trial: String(isTrial) }
         };
-        if (!sub.introUsed) options.offer_id = offerIds[method];
+        if (!sub.introUsed) options.offer_id = SWIPES_OFFER_IDS[method];
         if (isTrial) {
             options.start_at = Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60;
             options.addons = [{ item: { name: 'Swipes Pro 3-day trial', amount: TRIAL_FEE_PAISE, currency: 'INR' } }];

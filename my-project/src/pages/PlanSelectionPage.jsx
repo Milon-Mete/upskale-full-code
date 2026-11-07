@@ -8,8 +8,8 @@ import '../swipes.css';
 const INTRO_PRICE = 799;
 const RENEWAL_PRICE = 1299;
 const TRIAL_DAYS = 3;
-// Set to true once the autopay routes and Razorpay offers are live on the server.
-const SALES_OPEN = false;
+// Sales stay closed until the real Rs 1 test passes. /pro?launch opens checkout for that test.
+const SALES_OPEN = new URLSearchParams(window.location.search).has('launch');
 
 const BENEFITS = [
     { icon: Smartphone, title: 'Made for your phone', text: 'Short lessons you swipe through, anywhere.' },

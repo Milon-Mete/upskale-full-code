@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { BASE_URL } from '../config';
+import { realSwipes } from '../swipes';
 
 
 const IconMap = {
@@ -69,7 +70,7 @@ const PremiumPage = () => {
                 const response = await fetch(`${BASE_URL}/bitesize-courses`);
                 if (response.ok) {
                     const data = await response.json();
-                    setCourses(data);
+                    setCourses(realSwipes(data));
                 } else {
                     console.error("Failed to fetch bite-sized courses");
                 }

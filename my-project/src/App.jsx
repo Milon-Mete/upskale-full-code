@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios'; // 🔴 1. ADD THIS IMPORT
 import LanguageSwitcher from './components/LanguageSwitcher';
 import './index.css'
@@ -13,9 +13,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const PremiumPage = lazy(() => import('./pages/PremiumPage'));
 
 // Course Pages
-const PowerBICoursePage = lazy(() => import('./pages/PowerBICoursePage'));
 const ExcelCoursePage = lazy(() => import('./pages/ExcelCoursePage'));
-const GenAICoursePage = lazy(() => import('./pages/GenAICoursePage'));
 const DynamicCoursePage = lazy(() => import('./pages/DynamicCoursePage'));
 const ExcelPlaylistPage = lazy(() => import('./pages/ExcelPlaylistPage'));
 
@@ -117,9 +115,9 @@ function App() {
           <Route path="/recart" element={<RecartPage />} />
 
           {/* Hardcoded Course Pages */}
-          <Route path="/power-bi-data-visualization" element={<PowerBICoursePage />} />
+          <Route path="/power-bi-data-visualization" element={<Navigate to="/course/power-bi-data-visualization-1772045011466" replace />} />
           <Route path="/excel-mastery-with-ai-tools" element={<ExcelCoursePage />} />
-          <Route path="/generative-ai-toolset-mastery" element={<GenAICoursePage />} />
+          <Route path="/generative-ai-toolset-mastery" element={<Navigate to="/course/gen-ai-tools-mastery-1771958667482" replace />} />
           
           {/* Dynamic Routes */}
           <Route path="/course/:slug" element={<DynamicCoursePage />} />

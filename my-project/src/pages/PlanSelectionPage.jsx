@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Award, ShieldCheck, ArrowRight, ChevronLeft, Lock, Star, Check, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
 import { BASE_URL } from '../config'; 
@@ -13,8 +13,7 @@ const PlanSelectionPage = () => {
 
     const [selectedPlan, setSelectedPlan] = useState('monthly');
     const [openFaq, setOpenFaq] = useState(null);
-    const [previewLocked, setPreviewLocked] = useState(false);
-    const previewVideoRef = useRef(null);
+    const previewLocked = true;
 
     // Coupon state
     const [couponCode, setCouponCode] = useState('');
@@ -38,14 +37,6 @@ const PlanSelectionPage = () => {
         return () => window.removeEventListener('storage', syncUser);
     }, []);
 
-    const genericPlatformTrailerUrl = "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4";
-
-    const testimonials = [
-        { name: "Aarav Sharma", initial: "A", rating: 5, text: "This platform is such a gem. I upgraded to their pro plan and absolutely love using it. Thank u so much" },
-        { name: "Priya Verma", initial: "P", rating: 4, text: "App bohat acha hai aur cost ke hisab se pro features kafi affordable hai. Apko pro features try karna chaiye" },
-        { name: "Aarav Sharma", initial: "A", rating: 5, text: "Great for self-study. If you want to study without getting distracted then you should buy their pro mode." }
-    ];
-    
     const features = [
         { name: "Unlimited Module Access", free: true, pro: true },
         { name: "Community Access", free: true, pro: true },
@@ -70,15 +61,6 @@ const PlanSelectionPage = () => {
         };
         loadRazorpay();
     }, []);
-
-    useEffect(() => {
-        if (previewVideoRef.current && !previewLocked) {
-            const playPromise = previewVideoRef.current.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(e => console.log("Autoplay blocked", e));
-            }
-        }
-    }, [previewLocked]);
 
     // --- SUBSCRIPTION STATUS CALCULATION ---
     const subscription = currentUser?.biteSizeSubscription;
@@ -238,18 +220,6 @@ const PlanSelectionPage = () => {
 
             {/* VIDEO HEADER */}
             <div className="w-full h-[45vh] lg:h-[70vh] md:relative sticky bg-black top-0 z-0 overflow-hidden">
-                <video
-                    ref={previewVideoRef} src={genericPlatformTrailerUrl} autoPlay muted playsInline
-                    className={`w-full h-full object-cover transition-all duration-1000 ease-out ${previewLocked ? 'opacity-30 blur-xl scale-105' : 'opacity-80 scale-100'}`}
-                    onEnded={() => setPreviewLocked(true)}
-                    onError={() => setPreviewLocked(true)}
-                    onTimeUpdate={(e) => {
-                        if (e.target.currentTime >= 10 && !previewLocked) {
-                            e.target.pause();
-                            setPreviewLocked(true);
-                        }
-                    }}
-                />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 lg:via-[#0a0a0a]/40 to-transparent pointer-events-none" />
                 
                 <button onClick={() => navigate(returnPath === '/' ? -1 : returnPath)} className="absolute top-6 left-4 lg:left-8 p-2 lg:p-3 bg-black/40 backdrop-blur-md rounded-full text-white z-30 hover:bg-black/60 transition-colors">
@@ -261,7 +231,7 @@ const PlanSelectionPage = () => {
                         <div className="w-16 h-16 bg-[#eab308]/20 rounded-full flex items-center justify-center mb-3 border border-[#eab308]/30">
                             <Lock size={32} className="text-[#eab308]" />
                         </div>
-                        <h3 className="text-2xl lg:text-4xl font-black text-white drop-shadow-lg">Preview Ended</h3>
+                        <h3 className="text-2xl lg:text-4xl font-black text-white drop-shadow-lg">UPSKALE PRO</h3>
                         <p className="text-gray-300 text-sm lg:text-lg mt-2 drop-shadow-md">Unlock PRO to access all modules instantly.</p>
                     </div>
                 )}
@@ -277,24 +247,6 @@ const PlanSelectionPage = () => {
                                 <img src="https://res.cloudinary.com/dvcs9x8yp/image/upload/v1775412223/20250730_170449_0000_uq4d24.png" alt="UPSKALE Logo" className="h-8 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-[0_0_15px_rgba(0,138,69,0.3)]" />
                             </div>
                             <h1 className="text-3xl lg:text-6xl font-black mt-2 leading-tight lg:drop-shadow-2xl">Unlock 10x career growth now</h1>
-                        </div>
-
-                        {/* Testimonials */}
-                        <div className="flex overflow-x-auto lg:grid lg:grid-cols-2 gap-4 pb-8 snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                            {testimonials.map((t, idx) => (
-                                <div key={idx} className="bg-[#121212] lg:bg-black/60 lg:backdrop-blur-md border border-white/5 lg:border-white/10 rounded-2xl p-5 min-w-[280px] sm:min-w-[320px] lg:min-w-0 snap-center shrink-0 lg:hover:-translate-y-1 transition-transform duration-300">
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-sm text-gray-300">{t.initial}</div>
-                                            <span className="font-bold text-sm text-gray-200">{t.name}</span>
-                                        </div>
-                                        <div className="flex gap-0.5 text-[#eab308]">
-                                            {[...Array(t.rating)].map((_, i) => <Star key={i} size={12} fill="currentColor" />)}
-                                        </div>
-                                    </div>
-                                    <p className="text-gray-400 text-sm leading-relaxed">{t.text}</p>
-                                </div>
-                            ))}
                         </div>
 
                         {/* Before / After Graphic */}

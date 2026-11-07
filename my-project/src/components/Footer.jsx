@@ -79,7 +79,7 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Platform</h3>
             <ul className="space-y-4">
-              {['Browse Courses', 'Live Masterclasses', 'Corporate Training', 'Mentorship Program'].map((item) => (
+              {['Browse Courses', 'Corporate Training', 'Mentorship Program'].map((item) => (
                 <li key={item}>
                   <a href="#" className="text-gray-400 hover:text-[#008a45] text-sm font-medium transition-colors flex items-center gap-2 group">
                     <span className="w-1.5 h-1.5 rounded-full bg-gray-600 group-hover:bg-[#008a45] transition-colors"></span>

@@ -59,6 +59,12 @@ const MasterclassHighlight = () => {
   if (loading || masterclasses.length === 0) return null;
 
   return (
+    <>
+    <div className="max-w-[1400px] mx-auto px-4 md:px-6 pt-2">
+      <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-4">
+        Live Masterclasses
+      </h2>
+    </div>
     <section className="py-8 px-4 w-full flex justify-center animate-fade-in-up">
       <div className="w-full flex flex-col items-center gap-8">
         
@@ -172,6 +178,7 @@ const MasterclassHighlight = () => {
         })}
       </div>
     </section>
+    </>
   );
 };
 

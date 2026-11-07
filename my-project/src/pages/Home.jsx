@@ -93,18 +93,11 @@ const Home = () => {
       <main className="pb-24 md:pb-10">
         {isFestiveLive() && <FestiveStrip />}
         <CohortRail />
-        <TrendingRail />
+        <TrendingRail footer={<ComboStrip />} />
 
         <section id="masterclass" className="scroll-mt-24">
-          <div className="max-w-[1400px] mx-auto px-4 md:px-6 pt-2">
-            <h2 className="text-2xl md:text-3xl font-black tracking-tight text-white mb-4">
-              Live Masterclasses
-            </h2>
-          </div>
           <MasterclassHighlight />
         </section>
-
-        <ComboStrip />
 
         <FAQ />
       </main>

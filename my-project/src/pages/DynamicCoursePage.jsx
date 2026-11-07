@@ -197,14 +197,7 @@ const DynamicCoursePage = () => {
     document.getElementById('pricing-section')?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  // --- FALLBACK REVIEWS ---
-  const defaultTestimonials = [
-    { studentName: "Puja Das", role: "Data Analyst @ Infosys", image: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png", comment: "The dashboard tracking kept me motivated. Bite-sized lessons made it easy to learn daily." },
-    { studentName: "Amit Patel", role: "DevOps Engineer @ Wipro", image: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png", comment: "Real projects and GitHub reviews made it feel like a real job, not just a course." },
-    { studentName: "Sneha Roy", role: "Designer @ Accenture", image: "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png", comment: "I built my entire portfolio here. The design critiques were brutally honest and helpful." },
-  ];
-
-  const displayReviews = course?.reviews?.length > 0 ? course.reviews : defaultTestimonials;
+  const displayReviews = course?.reviews || [];
 
 // --- DYNAMIC BACKGROUND LOGIC ---
   const courseTitle = course?.title?.toLowerCase() || '';
@@ -354,7 +347,7 @@ const DynamicCoursePage = () => {
           <div className={`hidden md:flex items-center gap-8 font-medium text-sm ${mutedTextColor}`}>
             <button onClick={() => document.getElementById('curriculum')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-white transition-colors">Curriculum</button>
             <button onClick={() => document.getElementById('instructors')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-white transition-colors">Instructors</button>
-            <button onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-white transition-colors">Reviews</button>
+            {displayReviews.length > 0 && <button onClick={() => document.getElementById('reviews')?.scrollIntoView({ behavior: 'smooth' })} className="hover:text-white transition-colors">Reviews</button>}
           </div>
 
           {/* Action Button */}
@@ -429,10 +422,6 @@ const DynamicCoursePage = () => {
 
             {/* Ratings & Social Proof */}
             <div className="flex flex-wrap gap-4 pt-2">
-              <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gradient-to-r from-[#f8e7a2]/10 to-transparent border border-[#f8e7a2]/20">
-                <Star className="text-[#f8e7a2]" size={18} fill="currentColor" />
-                <span className="font-semibold text-white text-sm">4.8/5 Avg. Rating</span>
-              </div>
               <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg bg-gradient-to-r ${userBadgeGradientFrom} to-transparent border ${userBadgeBorder}`}>
                 <Users className={`${mutedTextColor}`} size={18} />
                 <span className="font-semibold text-white text-sm">Live Expert Mentorship</span>
@@ -508,79 +497,7 @@ const DynamicCoursePage = () => {
         </div>
       </section>
 
-      {/* --- SUCCESSFUL TRANSITIONS (Infinite Marquee) --- */}
-      <section className={`py-20 ${mainBgColor} relative overflow-hidden`}>
-        <style>
-          {`
-            @keyframes infinite-scroll {
-              0% { transform: translateX(0); }
-              100% { transform: translateX(-50%); }
-            }
-            .animate-infinite-scroll {
-              animation: infinite-scroll 25s linear infinite;
-              width: max-content;
-            }
-            .animate-infinite-scroll:hover {
-              animation-play-state: paused;
-            }
-          `}
-        </style>
 
-        <div className="text-center mb-16 px-6">
-          <h2 className="text-3xl md:text-5xl font-black text-white">
-            100+ successful transitions
-          </h2>
-        </div>
-
-        <div className="relative w-full mx-auto">
-          <div className={`absolute left-0 top-0 bottom-0 w-24 md:w-48 bg-gradient-to-r ${gradientFromColor} to-transparent z-10 pointer-events-none`}></div>
-          <div className={`absolute right-0 top-0 bottom-0 w-24 md:w-48 bg-gradient-to-l ${gradientFromColor} to-transparent z-10 pointer-events-none`}></div>
-
-          <div className="flex animate-infinite-scroll pb-4">
-            {[
-              { name: "Amit Patel", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1770750327/Copilot_20260211_003509_xillrk.png", year: "2023" },
-              { name: "Sneha Roy", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1770750326/Copilot_20260211_003303_k1ejvj.png", year: "2022" },
-              { name: "Puja Das", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1770750326/Copilot_20260211_003423_l950ue.png", year: "2023" },
-              { name: "Shishir Siddharth", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1773742488/Copilot_20260317_154420_kzcdmp.png", year: "2024" },
-              { name: "Vanshu Saini", img: "https://res.cloudinary.com/dhm18d3so/image/upload/v1773741214/man-empty-avatar-photo-placeholder-for-social-networks-resumes-forums-and-dating-sites-male-and-female-no-photo-images-for-unfilled-user-profile-free-vector_qsnqyy.webp", year: "2021" },
-              { name: "Miyanji Farhan", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1773742717/Copilot_20260317_154824_gif6qr.png", year: "2022" },
-              // DUPLICATES
-              { name: "Amit Patel", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1770750327/Copilot_20260211_003509_xillrk.png", year: "2023" },
-              { name: "Sneha Roy", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1770750326/Copilot_20260211_003303_k1ejvj.png", year: "2022" },
-              { name: "Puja Das", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1770750326/Copilot_20260211_003423_l950ue.png", year: "2023" },
-              { name: "Shishir Siddharth", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1773742488/Copilot_20260317_154420_kzcdmp.png", year: "2024" },
-              { name: "Vanshu Saini", img: "https://res.cloudinary.com/dhm18d3so/image/upload/v1773741214/man-empty-avatar-photo-placeholder-for-social-networks-resumes-forums-and-dating-sites-male-and-female-no-photo-images-for-unfilled-user-profile-free-vector_qsnqyy.webp", year: "2021" },
-              { name: "Miyanji Farhan", img: "https://res.cloudinary.com/dvcs9x8yp/image/upload/v1773742717/Copilot_20260317_154824_gif6qr.png", year: "2022" },
-            ].map((student, idx) => (
-
-              <div
-                key={idx}
-                className="bg-white rounded-2xl w-[220px] h-[260px] flex flex-col items-center p-6 mx-4 shrink-0 shadow-lg cursor-pointer transform transition-transform hover:-translate-y-2"
-              >
-                {/* Profile Image - stays at top */}
-                <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-gray-100 shadow-sm mt-2">
-                  <img src={student.img} alt={student.name} className="w-full h-full object-cover" />
-                </div>
-
-                {/* Text Group - This brings them closer */}
-                <div className="mt-4 flex flex-col items-center gap-2">
-                  <h3 className={`font-bold ${darkTextColor} text-lg text-center tracking-tight`}>
-                    {student.name}
-                  </h3>
-
-                  <div className="flex items-center gap-2 px-3 py-1 bg-blue-50/50 border border-blue-100 rounded-full">
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse"></div>
-                    <span className="text-[11px] font-bold text-blue-700 uppercase tracking-widest">
-                      Class of {student.year}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* --- CAREER OUTCOMES / STATS STRIP --- */}
       <section className="py-16 px-6 max-w-7xl mx-auto">
@@ -724,11 +641,12 @@ const DynamicCoursePage = () => {
       )}
 
       {/* --- REVIEWS / TESTIMONIALS --- */}
+      {displayReviews.length > 0 && (
       <section id="reviews" className={`py-20 ${altBgColor} border-y border-white/10 px-6`}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl md:text-5xl font-black mb-4">Student Success Stories</h2>
-            <p className={`${mutedTextColor} text-lg`}>Join thousands of learners who have transformed their careers.</p>
+            <p className={`${mutedTextColor} text-lg`}>What students say about this course.</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -754,6 +672,7 @@ const DynamicCoursePage = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* --- LIVE CLASS SCHEDULE --- */}
       <section className="py-20 px-6 max-w-7xl mx-auto">
@@ -931,7 +850,7 @@ const DynamicCoursePage = () => {
                 </p>
                 <div className="flex-1">
                   <p className={`${mutedTextColor} text-[10px] md:text-xs mb-1.5 opacity-80`}>This certificate is proudly awarded to</p>
-                  <h4 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6 tracking-tight">Aarav Sharma</h4>
+                  <h4 className="text-2xl md:text-3xl font-bold text-white mb-4 md:mb-6 tracking-tight">Your Name Here</h4>
                   <p className={`${mutedTextColor} text-[10px] md:text-xs mb-1.5 opacity-80`}>for successfully completing</p>
                   <h5 className="text-lg md:text-xl font-medium text-white">{course?.title || "Data Analyst Fellowship"}</h5>
                 </div>

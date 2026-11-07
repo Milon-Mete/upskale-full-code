@@ -63,7 +63,7 @@ const CertificateSearchManager = () => {
                         type="text"
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="e.g. Milon, +919876..., or CERT-123..."
+                        placeholder="e.g. Student name, +919876..., or CERT-123..."
                         className="w-full pl-11 pr-4 py-4 bg-[#1a1a1a] border border-white/10 rounded-2xl text-white placeholder-gray-500 focus:outline-none focus:border-[#008a45] focus:ring-1 focus:ring-[#008a45] transition-all shadow-inner"
                     />
                 </div>

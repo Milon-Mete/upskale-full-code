@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Bookmark, Search, Play, Video, Loader2, Lock, ArrowRight, BookOpen, Sparkles, ChevronRight } from 'lucide-react';
 import { BASE_URL } from '../config';
+import { realSwipes } from '../swipes';
 
 const MyLibraryPage = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const MyLibraryPage = () => {
 
       try {
         const publicRes = await fetch(`${BASE_URL}/bitesize-courses`);
-        const publicCourses = await publicRes.json();
+        const publicCourses = realSwipes(await publicRes.json());
 
         const groupedData = [];
 

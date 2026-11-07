@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpen, Star, TrendingUp, Layers, Zap, BarChart3, FileSpreadsheet, Bot, Presentation, MessageSquare, BadgeIndianRupee } from 'lucide-react';
 import { BASE_URL } from '../config';
+import { realSwipes } from '../swipes';
 import { NetflixRail, RailCard, RailSkeleton } from './NetflixRail';
 
 const IconMap = {
@@ -59,7 +60,7 @@ export const CohortRail = () => {
 };
 
 /* ---------------- Trending rail (GET /bitesize-courses, rank numbers) ---------------- */
-export const TrendingRail = () => {
+export const TrendingRail = ({ footer = null }) => {
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
@@ -74,8 +75,7 @@ export const TrendingRail = () => {
     (async () => {
       try {
         const res = await fetch(`${BASE_URL}/bitesize-courses`);
-        const data = await res.json();
-        setCourses(Array.isArray(data) ? data : []);
+        setCourses(realSwipes(await res.json()));
       } catch (e) {
         console.error('Failed to fetch bitesize courses', e);
       } finally {
@@ -88,6 +88,7 @@ export const TrendingRail = () => {
   if (courses.length === 0) return null;
 
   return (
+    <>
     <NetflixRail id="trending" eyebrow="Short, sharp, certificate-ready" title="Trending" titleGold icon={TrendingUp}>
       {courses.toReversed().map((course, i) => {
         const FallbackIcon = IconMap[course.iconName] || Layers;
@@ -117,5 +118,7 @@ export const TrendingRail = () => {
         );
       })}
     </NetflixRail>
+    {footer}
+    </>
   );
 };

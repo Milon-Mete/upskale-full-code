@@ -35,11 +35,10 @@ const MasterclassLanding = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [activeFaq, setActiveFaq] = useState(null);
-  const [secondsLeft, setSecondsLeft] = useState(9 * 60 + 59); // evergreen urgency timer
+  const [notFound, setNotFound] = useState(false);
 
-  // --- DUMMY DATA (fallback / demo) ---
+  // --- Defaults for fields a masterclass record leaves empty ---
   const DEFAULT_DATA = {
-    _id: "demo_id_123",
     title: "10X Work Productive Gen AI Workshop",
     tagline: "Master practical AI skills you can use right away to work faster, smarter, and better — even if you're completely new to AI. 🚀",
     bannerImage: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2670&auto=format&fit=crop",
@@ -76,26 +75,11 @@ const MasterclassLanding = () => {
       { question: "Do I need any coding or technical background?", answer: "Not at all. This session is designed to take you from fundamentals to advanced use with zero code." },
       { question: "Will there be a recording?", answer: "Yes, registered attendees get access to the session recording." }
     ],
-    reviews: [
-      { studentName: "Rahul Verma", rating: 5, comment: "I learned more in these hours than in a 6-month course. Absolutely insane value!" },
-      { studentName: "Priya Sharma", rating: 5, comment: "The bonuses alone were worth it. Highly recommended for any working professional." },
-      { studentName: "Amit Patel", rating: 5, comment: "Direct, no-fluff content. I applied it the very next day at work." }
-    ],
-    totalSeats: 100,
-    enrolledCount: 87
+    reviews: [],
+    enrolledCount: 0
   };
 
   const [data, setData] = useState(DEFAULT_DATA);
-
-  // Evergreen countdown
-  useEffect(() => {
-    const t = setInterval(() => {
-      setSecondsLeft(prev => (prev <= 1 ? 9 * 60 + 59 : prev - 1));
-    }, 1000);
-    return () => clearInterval(t);
-  }, []);
-  const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
-  const ss = String(secondsLeft % 60).padStart(2, '0');
 
   // Price-aware copy: "FREE" wording only when the ticket itself costs nothing
   const ticketPrice = data.price?.discounted || 0;
@@ -142,7 +126,7 @@ const MasterclassLanding = () => {
           whatYouWillLearn: apiData.whatYouWillLearn?.length ? apiData.whatYouWillLearn : prev.whatYouWillLearn,
           whoIsThisFor: apiData.whoIsThisFor?.length ? apiData.whoIsThisFor : prev.whoIsThisFor,
         }));
-      } catch (err) { console.log("Using Demo Data"); }
+      } catch { setNotFound(true); }
       finally { setLoading(false); }
     };
     if (slug) fetchData(); else setLoading(false);
@@ -179,6 +163,16 @@ const MasterclassLanding = () => {
     </div>
   );
 
+  const isOver = new Date(data.schedule?.startDate).setHours(23, 59, 59) < Date.now();
+
+  if (notFound || (isOver && !isPurchased)) return (
+    <div className="min-h-screen flex flex-col items-center justify-center text-center px-6" style={{ background: CREAM }}>
+      <h1 className="text-2xl font-black mb-2" style={{ color: INK }}>This masterclass isn't available</h1>
+      <p className="mb-6" style={{ color: MUTE }}>It may have ended or the link may be wrong.</p>
+      <button onClick={() => navigate('/')} className="px-6 py-3 rounded-xl font-bold text-white" style={{ background: CLAY }}>Browse courses</button>
+    </div>
+  );
+
   // Reusable primary button
   const CtaButton = ({ label, className = '' }) => (
     <button
@@ -190,7 +184,7 @@ const MasterclassLanding = () => {
     </button>
   );
 
-  const PriceBlock = ({ compact = false }) => (
+  const PriceBlock = () => (
     <div className="rounded-2xl p-6 text-center" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
       <p className="text-xs font-bold uppercase tracking-widest" style={{ color: MUTE }}>Your seat for this workshop is</p>
       <div className="text-6xl font-black mt-2" style={{ color: GREEN }}>
@@ -208,12 +202,6 @@ const MasterclassLanding = () => {
         <Clock size={15} style={{ color: CLAY }} /> {data.schedule.startTime} – {data.schedule.endTime} IST
       </div>
       <CtaButton label={isPurchased ? 'Go to Your Profile' : (isFree ? 'Register Now — It\'s Free' : `Register Now — Just ₹${ticketPrice}`)} className="w-full mt-6 py-4 text-lg" />
-      {!compact && (
-        <>
-          <p className="text-xs font-semibold mt-4" style={{ color: MUTE }}>Limited seats — closing in</p>
-          <div className="text-2xl font-black tracking-widest mt-1" style={{ color: CLAY }}>{mm}:{ss}</div>
-        </>
-      )}
       <div className="mt-4 flex items-center justify-center gap-1.5 text-xs" style={{ color: MUTE }}>
         <ShieldCheck size={13} /> Secure registration
       </div>
@@ -231,7 +219,7 @@ const MasterclassLanding = () => {
       {/* ===== ANNOUNCEMENT BAR ===== */}
       <div className="w-full text-center text-white text-xs sm:text-sm font-semibold py-2 px-4"
         style={{ background: `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}>
-        🔥 Almost Full! {isFree ? 'Claim one of the last free seats' : 'Claim one of the last seats'} — offer ends in {mm}:{ss}
+        {isFree ? 'Free live workshop' : 'Live workshop'} — {formatDate(data.schedule.startDate)}, {data.schedule.startTime} IST
       </div>
 
       {/* ===== MINIMAL HEADER ===== */}
@@ -259,14 +247,12 @@ const MasterclassLanding = () => {
               {data.tagline}
             </p>
             <div className="flex flex-wrap items-center gap-x-8 gap-y-3 mb-8">
-              <div className="flex items-center gap-2">
-                <Users size={18} style={{ color: CLAY }} />
-                <span className="font-bold" style={{ color: INK }}>{data.enrolledCount > 20 ? data.enrolledCount : 20}+ Enrolled</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star size={18} className="fill-current" style={{ color: '#e0a500' }} />
-                <span className="font-bold" style={{ color: INK }}>4.9/5 Rated</span>
-              </div>
+              {data.enrolledCount >= 20 && (
+                <div className="flex items-center gap-2">
+                  <Users size={18} style={{ color: CLAY }} />
+                  <span className="font-bold" style={{ color: INK }}>{data.enrolledCount}+ Enrolled</span>
+                </div>
+              )}
               <div className="flex items-center gap-2">
                 <Award size={18} style={{ color: CLAY }} />
                 <span className="font-bold" style={{ color: INK }}>Certificate</span>
@@ -305,10 +291,9 @@ const MasterclassLanding = () => {
 
       {/* ===== TRUST STRIP ===== */}
       <section className="py-6 overflow-hidden" style={{ background: CREAM_ALT, borderTop: `1px solid ${BORDER}`, borderBottom: `1px solid ${BORDER}` }}>
-        <div className="max-w-6xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+        <div className="max-w-6xl mx-auto px-5 flex flex-wrap justify-center gap-x-12 gap-y-6 text-center">
           {[
-            { v: `${data.enrolledCount > 20 ? data.enrolledCount : 20}+`, l: 'Enrolled' },
-            { v: '4.9/5', l: 'Avg. Rating' },
+            ...(data.enrolledCount >= 20 ? [{ v: `${data.enrolledCount}+`, l: 'Enrolled' }] : []),
             { v: '3 Hrs', l: 'Live Session' },
             { v: '100%', l: 'Actionable' },
           ].map((s, i) => (
@@ -487,7 +472,7 @@ const MasterclassLanding = () => {
       <section className="py-20 px-5 text-center">
         <div className="max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-5xl font-black mb-4" style={{ color: INK }}>Ready to Become 10X More Productive?</h2>
-          <p className="text-lg mb-8" style={{ color: MUTE }}>Join {data.enrolledCount > 20 ? data.enrolledCount : 20}+ professionals. Seats are almost full.</p>
+          <p className="text-lg mb-8" style={{ color: MUTE }}>Save your seat for the live session.</p>
           <div className="max-w-md mx-auto"><PriceBlock /></div>
         </div>
       </section>
@@ -500,7 +485,6 @@ const MasterclassLanding = () => {
             {!isPurchased ? (
               <div className="flex items-baseline gap-2">
                 <span className="text-xl font-black" style={{ color: GREEN }}>{priceLabel}</span>
-                <span className="text-xs font-semibold ml-2" style={{ color: CLAY }}>Seats close in {mm}:{ss}</span>
               </div>
             ) : (
               <span className="font-bold text-sm inline-flex items-center gap-1.5" style={{ color: GREEN }}>

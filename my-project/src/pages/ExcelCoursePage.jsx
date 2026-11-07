@@ -47,12 +47,6 @@ const syllabus = [
   { title: "Final Assessment & Certificate", items: ["Comprehensive Exam", "Performance Review", "Certificate of Completion"], icon: Award },
 ];
 
-const testimonials = [
-  { name: "Rohit Malhotra", role: "Operations Manager @ Amazon", image: "https://randomuser.me/api/portraits/men/75.jpg", story: "I used to spend 4 hours daily on reports. After learning Macros and ChatGPT for Excel, I finish the same work in 15 minutes." },
-  { name: "Anjali Gupta", role: "Financial Analyst @ HDFC", image: "https://randomuser.me/api/portraits/women/65.jpg", story: "The VLOOKUP and Pivot Table modules were explained so simply. I finally understand how to handle large datasets without crashing my sheet." },
-  { name: "Vikram Singh", role: "Business Owner", image: "https://randomuser.me/api/portraits/men/32.jpg", story: "The dashboarding section helped me visualise my sales data. Now I can actually see where my business is growing." },
-];
-
 const faqs = [
   { q: "Is this course good for complete beginners?", a: "Yes. We start from the absolute basics — interface, tabs, workbooks — and take you step by step to advanced topics like Pivot Tables, dashboards and AI-powered Excel." },
   { q: "Do I need Microsoft Excel installed?", a: "You can follow along with Microsoft Excel (any recent version) or free Google Sheets. The AI modules work in both." },
@@ -257,7 +251,6 @@ const ExcelCoursePage = () => {
   const stats = [
     { icon: Clock, label: '20+ Hours Content' },
     { icon: FileText, label: '12 Modules' },
-    { icon: Star, label: '4.9/5 Rating' },
     { icon: InfinityIcon, label: 'Lifetime Access' },
     { icon: Award, label: 'Certificate Included' },
     { icon: Users, label: 'Beginner Friendly' },
@@ -381,15 +374,6 @@ const ExcelCoursePage = () => {
                   alt="Excel with AI course"
                   className="w-full h-auto"
                 />
-              </div>
-              <div className="absolute -bottom-5 -left-5 bg-white rounded-2xl shadow-xl px-5 py-3 flex items-center gap-3">
-                <div className="flex" style={{ color: GOLD }}>
-                  {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} fill="currentColor" />)}
-                </div>
-                <div className="text-slate-900">
-                  <p className="font-black text-sm leading-none">4.9/5</p>
-                  <p className="text-[11px] text-slate-500">Student rating</p>
-                </div>
               </div>
             </div>
           </div>
@@ -645,33 +629,6 @@ const ExcelCoursePage = () => {
               ))}
             </tbody>
           </table>
-        </div>
-      </section>
-
-      {/* ===== TESTIMONIALS ===== */}
-      <section className="max-w-6xl mx-auto px-4 mt-20">
-        <h2 className="text-3xl md:text-4xl font-black text-center mb-2">
-          Student <span style={{ color: PURPLE }}>success stories</span>
-        </h2>
-        <p className="text-slate-500 text-center mb-8">Real learners. Real promotions.</p>
-        <div className="grid md:grid-cols-3 gap-5">
-          {testimonials.map(t => (
-            <div key={t.name} className="bg-white rounded-3xl border border-purple-100 p-6 shadow-sm flex flex-col">
-              <div className="flex items-center gap-3 mb-4">
-                <img src={t.image} alt={t.name} className="w-12 h-12 rounded-full object-cover" />
-                <div>
-                  <p className="font-bold text-slate-900 flex items-center gap-1.5">
-                    {t.name} <BadgeCheck size={16} style={{ color: GREEN }} />
-                  </p>
-                  <p className="text-xs text-slate-500">{t.role}</p>
-                </div>
-              </div>
-              <div className="flex gap-0.5 mb-3" style={{ color: GOLD }}>
-                {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} fill="currentColor" />)}
-              </div>
-              <p className="text-sm text-slate-600 leading-relaxed">“{t.story}”</p>
-            </div>
-          ))}
         </div>
       </section>
 

@@ -44,8 +44,6 @@ const Navbar = () => {
           <div className="hidden md:flex items-center gap-8">
             {[
               { label: 'Cohorts', href: '#cohorts' },
-              { label: 'Trending', href: '#trending' },
-              { label: 'Masterclass', href: '#masterclass' },
             ].map((item) => (
               <a
                 key={item.label}

@@ -10,6 +10,7 @@ import { BASE_URL } from '../../config';
 import FeedbackSection from '../../components/FeedbackSection';
 import ReviewsSection from '../../components/ReviewsSection';
 import RoadmapScreen from '../../components/RoadmapScreen';
+import { realSwipes } from '../../swipes';
 
 // =====================================================
 // SUB-COMPONENT: SHORTS VIDEO PLAYER
@@ -1296,7 +1297,7 @@ const BiteSizeCoursePage = () => {
                 const res = await fetch(`${BASE_URL}/bitesize-courses`);
                 if (res.ok) {
                     const data = await res.json();
-                    setAllCourses(data.filter(c => c.slug !== slug));
+                    setAllCourses(realSwipes(data).filter(c => c.slug !== slug));
                 }
             } catch (err) {
                 console.error("Failed to fetch all courses:", err);

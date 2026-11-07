@@ -1,0 +1,127 @@
+/* Diwali offer motion, shared by the homepage strip and /festive-offer. */
+
+@keyframes festive-rise {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.festive-rise {
+    animation: festive-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: var(--delay, 0ms);
+}
+
+/* The offer price lands hard. Scale only, so the price is never invisible. */
+@keyframes festive-slam {
+    0% { transform: scale(1.7); }
+    60% { transform: scale(0.92); }
+    100% { transform: scale(1); }
+}
+.festive-slam {
+    display: inline-block;
+    animation: festive-slam 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+@keyframes festive-strike {
+    from { transform: scaleX(0); }
+    to { transform: scaleX(1); }
+}
+.festive-strike { position: relative; display: inline-block; }
+.festive-strike::after {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    top: 52%;
+    height: 2px;
+    background: #ef4444;
+    transform-origin: left;
+    animation: festive-strike 0.4s ease-out 0.35s both;
+}
+
+/* Rotating gold edge around the poster */
+.festive-frame {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 2px;
+    overflow: hidden;
+    border-radius: 1.5rem;
+    background: rgba(234, 179, 8, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6), 0 0 45px rgba(234, 179, 8, 0.18);
+}
+.festive-frame::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 170%;
+    aspect-ratio: 1;
+    background: conic-gradient(transparent 0 62%, #fde047 78%, #f97316 88%, transparent 100%);
+    animation: festive-orbit 4.5s linear infinite;
+}
+.festive-frame > img {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: calc(1.5rem - 2px);
+}
+@keyframes festive-orbit {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Buy button: a ring that keeps pulling the eye */
+@keyframes festive-ring {
+    0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.6); }
+    100% { box-shadow: 0 0 0 16px rgba(250, 204, 21, 0); }
+}
+.festive-ring { animation: festive-ring 1.6s ease-out infinite; }
+
+/* Countdown digit changing */
+@keyframes festive-tick {
+    from { opacity: 0.2; transform: translateY(-35%); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.festive-tick { display: inline-block; animation: festive-tick 0.3s ease-out; }
+
+/* Hanging lanterns */
+@keyframes festive-swing {
+    from { transform: rotate(-7deg); }
+    to { transform: rotate(7deg); }
+}
+.festive-lantern {
+    transform-origin: top center;
+    animation: festive-swing 2.6s ease-in-out infinite alternate;
+    filter: drop-shadow(0 0 14px rgba(249, 115, 22, 0.75));
+}
+
+/* Diya flame */
+@keyframes festive-flicker {
+    0%, 100% { transform: scale(1, 1) rotate(-2deg); opacity: 1; }
+    30% { transform: scale(0.9, 1.14) rotate(3deg); opacity: 0.86; }
+    65% { transform: scale(1.06, 0.92) rotate(-3deg); opacity: 1; }
+}
+.festive-flame {
+    transform-box: fill-box;
+    transform-origin: 50% 100%;
+    animation: festive-flicker 0.9s ease-in-out infinite;
+    animation-delay: var(--delay, 0ms);
+}
+.festive-diya { filter: drop-shadow(0 0 10px rgba(251, 191, 36, 0.7)); }
+
+/* Thank-you card after a purchase */
+@keyframes festive-pop {
+    0% { opacity: 0; transform: scale(0.7); }
+    70% { opacity: 1; transform: scale(1.04); }
+    100% { opacity: 1; transform: scale(1); }
+}
+.festive-pop { animation: festive-pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) both; }
+
+@media (prefers-reduced-motion: reduce) {
+    .festive-rise, .festive-slam, .festive-tick, .festive-pop,
+    .festive-ring, .festive-lantern, .festive-flame,
+    .festive-frame::before, .festive-strike::after {
+        animation: none;
+    }
+    .festive-frame::before { display: none; }
+}

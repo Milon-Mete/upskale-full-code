@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Zap, GraduationCap, ShieldCheck, CheckCircle2, Sparkles, Lock } from 'lucide-react';
+import { X, Zap, GraduationCap, ShieldCheck, CheckCircle2, Sparkles, Lock, ArrowRight, PlayCircle, Award } from 'lucide-react';
 import { BASE_URL } from '../config';
 
 const GoogleIcon = ({ className = "w-5 h-5" }) => (
@@ -14,6 +14,11 @@ const GoogleIcon = ({ className = "w-5 h-5" }) => (
 );
 
 const LOGO_URL = "https://res.cloudinary.com/villain/image/upload/v1770662332/20250730_170553_0000_xyfhoc.png";
+
+const PURPLE = '#7C3AED';
+const PURPLE_DARK = '#5B21B6';
+const PLUM = '#241530';
+const GREEN = '#16A34A';
 
 /*
  * Sign-in is Google-only.
@@ -35,123 +40,145 @@ const LoginModal = ({ onSuccess, onClose, isStandalonePage = false }) => {
     }
   };
 
+  const benefits = [
+    { icon: Lock, title: 'Secure Google Sign-In', desc: 'No passwords, no codes to wait for' },
+    { icon: GraduationCap, title: 'Live Cohorts & Certificates', desc: 'Your progress follows your account' },
+    { icon: Award, title: 'All Your Courses, One Place', desc: 'Recordings, notes and assessments' },
+  ];
+
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/70 backdrop-blur-xl p-0 md:p-6 lg:p-10 overflow-hidden select-none animate-in fade-in duration-300 font-sans">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 overflow-y-auto select-none font-sans"
+      style={{ background: '#F7F5FF' }}
+    >
+      {/* ambient blobs */}
+      <div className="absolute top-[-10%] left-[-8%] w-[420px] h-[420px] rounded-full pointer-events-none blur-3xl opacity-30"
+        style={{ background: `radial-gradient(circle, ${PURPLE}, transparent 70%)` }} />
+      <div className="absolute bottom-[-12%] right-[-6%] w-[460px] h-[460px] rounded-full pointer-events-none blur-3xl opacity-25"
+        style={{ background: `radial-gradient(circle, #A78BFA, transparent 70%)` }} />
+      <div className="absolute inset-0 pointer-events-none opacity-[0.35]"
+        style={{ backgroundImage: 'radial-gradient(#7C3AED 1px, transparent 1px)', backgroundSize: '28px 28px', maskImage: 'radial-gradient(ellipse 70% 60% at 50% 40%, black, transparent)' }} />
 
-      <div className="hidden md:block absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-emerald-500/15 blur-[140px] rounded-full pointer-events-none" />
-      <div className="hidden md:block absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-teal-500/15 blur-[140px] rounded-full pointer-events-none" />
-
-      <div className="w-full h-full md:h-auto max-w-5xl max-h-[100dvh] md:max-h-[88vh] bg-white border-0 md:border md:border-slate-200/90 rounded-none md:rounded-3xl shadow-2xl relative overflow-hidden flex flex-col md:grid md:grid-cols-12 font-sans">
+      <div className="relative w-full max-w-4xl bg-white rounded-[28px] shadow-[0_24px_80px_-16px_rgba(124,58,237,0.35)] border border-purple-100 overflow-hidden grid md:grid-cols-2 my-auto">
 
         {!isStandalonePage && onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-slate-100/80 hover:bg-slate-200 border border-slate-200/80 text-slate-600 hover:text-slate-900 transition-all shadow-xs active:scale-95 cursor-pointer"
+            className="absolute top-4 right-4 z-20 p-2.5 rounded-full bg-white/80 hover:bg-purple-50 border border-purple-100 text-slate-500 hover:text-slate-900 transition-all shadow-sm active:scale-95 cursor-pointer"
             aria-label="Close Login"
           >
             <X size={18} />
           </button>
         )}
 
-        {/* LEFT: BRAND PANEL (desktop only) */}
-        <div className="hidden md:flex md:col-span-5 bg-gradient-to-br from-[#0c0e17] via-[#090b13] to-[#040508] p-8 lg:p-10 flex-col justify-between relative overflow-hidden text-white border-r border-white/5">
-          <div className="absolute inset-0 bg-[radial-gradient(#25D366_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.05] pointer-events-none" />
-          <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-teal-500/10 rounded-full blur-3xl pointer-events-none" />
+        {/* LEFT: BRAND PANEL */}
+        <div
+          className="relative hidden md:flex flex-col justify-between p-10 text-white overflow-hidden"
+          style={{ background: `linear-gradient(150deg, ${PLUM} 0%, #3B1F4D 55%, ${PURPLE_DARK} 130%)` }}
+        >
+          <div className="absolute -top-24 -right-24 w-72 h-72 rounded-full blur-3xl opacity-30 pointer-events-none"
+            style={{ background: PURPLE }} />
+          <div className="absolute -bottom-28 -left-20 w-72 h-72 rounded-full blur-3xl opacity-20 pointer-events-none"
+            style={{ background: '#A78BFA' }} />
 
-          <div className="relative z-10">
-            <div className="mb-8">
-              <img
-                src={LOGO_URL}
-                alt="UPSKALE Logo"
-                className="h-12 w-auto object-contain brightness-0 invert drop-shadow-[0_0_12px_rgba(255,255,255,0.3)]"
-              />
+          <div className="relative">
+            <img src={LOGO_URL} alt="UPSKALE Logo" className="h-11 w-auto object-contain brightness-0 invert mb-10" />
+
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] font-black uppercase tracking-[0.14em] mb-5"
+              style={{ background: 'rgba(124,58,237,0.22)', border: '1px solid rgba(167,139,250,0.4)', color: '#DDD0FE' }}>
+              <Zap size={13} />
+              Upskale Learning
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-4">
-              <Zap size={14} className="text-emerald-400" />
-              <span>UPSKALE LEARNING</span>
-            </div>
-
-            <h1 className="text-3xl lg:text-4xl font-black leading-tight tracking-tight mb-3 font-sans">
-              Accelerate Your <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
-                Tech &amp; Career Goals.
+            <h1 className="text-[34px] leading-[1.15] font-black tracking-tight mb-4">
+              Your learning journey<br />
+              <span className="text-transparent bg-clip-text"
+                style={{ backgroundImage: `linear-gradient(90deg, #C4B5FD, ${PURPLE})` }}>
+                continues here.
               </span>
             </h1>
-
-            <p className="text-gray-400 text-xs sm:text-sm leading-relaxed max-w-xs font-sans">
-              Sign in with Google to reach your dashboard, cohorts and certificates.
+            <p className="text-slate-300/90 text-sm leading-relaxed max-w-[270px]">
+              Sign in to pick up right where you left off — courses, cohorts and certificates.
             </p>
           </div>
 
-          <div className="space-y-3 relative z-10 my-auto py-6 font-sans">
-            <div className="bg-white/[0.03] border border-white/10 p-3.5 rounded-2xl flex items-center gap-3.5 hover:border-emerald-500/30 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
-                <Lock size={18} />
+          <div className="relative space-y-2.5">
+            {benefits.map(({ icon: Icon, title, desc }) => (
+              <div key={title}
+                className="flex items-center gap-3.5 rounded-2xl px-4 py-3 transition-colors hover:bg-white/[0.06]"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)' }}>
+                <span className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ background: `linear-gradient(135deg, ${PURPLE}, ${PURPLE_DARK})` }}>
+                  <Icon size={18} className="text-white" />
+                </span>
+                <span>
+                  <span className="block text-[13px] font-bold text-white">{title}</span>
+                  <span className="block text-[11px] text-slate-400">{desc}</span>
+                </span>
               </div>
-              <div>
-                <h4 className="text-xs font-bold text-white">Secure Google Sign-In</h4>
-                <p className="text-[11px] text-gray-400">No passwords, no codes to wait for</p>
-              </div>
-            </div>
-
-            <div className="bg-white/[0.03] border border-white/10 p-3.5 rounded-2xl flex items-center gap-3.5 hover:border-white/20 transition-all">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
-                <GraduationCap size={18} />
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-white">Live Cohorts &amp; Certificates</h4>
-                <p className="text-[11px] text-gray-400">Your progress follows your account</p>
-              </div>
-            </div>
+            ))}
           </div>
 
-          <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-end text-xs text-gray-400 font-medium font-sans">
-            <span className="flex items-center gap-1 text-gray-400"><ShieldCheck size={14} /> 100% Secure</span>
+          <div className="relative flex items-center justify-between pt-5"
+            style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
+              <PlayCircle size={14} style={{ color: '#4ADE80' }} /> 20+ hours of content
+            </span>
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-300">
+              <ShieldCheck size={14} style={{ color: '#4ADE80' }} /> 100% Secure
+            </span>
           </div>
         </div>
 
         {/* RIGHT: SIGN-IN */}
-        <div className="md:col-span-7 bg-white p-5 sm:p-8 lg:p-10 flex flex-col justify-center relative overflow-y-auto h-full md:h-auto min-h-0 flex-1 font-sans">
-
-          <div className="md:hidden flex items-center justify-between gap-3 mb-8">
+        <div className="relative p-7 sm:p-10 flex flex-col justify-center">
+          <div className="md:hidden mb-8">
             <img src={LOGO_URL} alt="UPSKALE Logo" className="h-10 w-auto object-contain" />
           </div>
 
-          <div className="max-w-sm w-full mx-auto">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-100/60 text-emerald-800 text-[11px] font-bold uppercase tracking-wider mb-2">
-              <Sparkles size={12} className="text-emerald-600" />
-              <span>UPSKALE Access</span>
+          <div className="max-w-[340px] w-full mx-auto">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.14em] mb-3"
+              style={{ background: 'rgba(124,58,237,0.1)', color: PURPLE }}>
+              <Sparkles size={12} />
+              Upskale Access
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight font-sans">
-              Welcome
+            <h2 className="text-[28px] font-black text-slate-900 tracking-tight leading-tight">
+              Welcome back
             </h2>
-            <p className="text-slate-500 text-xs sm:text-sm mt-1 mb-6 font-medium font-sans">
-              Sign in to access your learning dashboard and live cohorts.
+            <p className="text-slate-500 text-sm mt-1.5 mb-7">
+              Sign in to access your dashboard, courses and certificates.
             </p>
 
             <a
               href={`${BASE_URL}/auth/google`}
               onClick={rememberReturnPath}
-              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50/90 border border-slate-200/90 hover:border-slate-300 text-slate-800 font-bold py-3.5 px-4 rounded-xl transition-all active:scale-[0.99] shadow-xs hover:shadow-sm cursor-pointer text-sm"
+              className="group w-full flex items-center justify-center gap-3 bg-white border-2 border-slate-200 hover:border-purple-300 text-slate-800 font-bold py-4 px-4 rounded-2xl transition-all active:scale-[0.98] text-[15px] cursor-pointer"
+              style={{ boxShadow: '0 8px 24px -8px rgba(124,58,237,0.25)' }}
             >
-              <GoogleIcon className="w-4 h-4 shrink-0" />
-              <span className="font-sans">Continue with Google</span>
+              <GoogleIcon className="w-5 h-5 shrink-0" />
+              <span>Continue with Google</span>
+              <ArrowRight size={17} className="text-slate-300 group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all" />
             </a>
+
+            <div className="flex items-center gap-3 my-6">
+              <span className="flex-1 h-px bg-purple-100" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">One-tap · No password</span>
+              <span className="flex-1 h-px bg-purple-100" />
+            </div>
 
             {/* Anyone who registered by phone will look for the mobile option that
                 used to be here. Say where it went, and that their account is intact. */}
-            <div className="mt-5 flex items-start gap-2.5 rounded-xl bg-slate-50 border border-slate-200/80 p-3.5">
-              <CheckCircle2 size={15} className="text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 rounded-2xl p-4"
+              style={{ background: 'rgba(22,163,74,0.07)', border: '1px solid rgba(22,163,74,0.2)' }}>
+              <CheckCircle2 size={16} className="shrink-0 mt-0.5" style={{ color: GREEN }} />
               <p className="text-[12px] leading-relaxed text-slate-600 font-medium">
                 Signed up with a mobile number before? Use the same Google address and
                 your courses, certificates and subscription carry over automatically.
               </p>
             </div>
 
-            <p className="text-[11px] text-slate-400 text-center mt-5 leading-relaxed">
+            <p className="text-[11px] text-slate-400 text-center mt-6 leading-relaxed">
               Trouble signing in? Contact support and we will link your account.
             </p>
           </div>

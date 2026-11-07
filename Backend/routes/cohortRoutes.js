@@ -122,7 +122,8 @@ router.post('/create-order', requireAuth, async (req, res) => {
                 amount: itemPrice,
                 planType: cartItem.planType || 'recorded',
                 paymentType: cartItem.isPart2Payment ? 'full' : (cartItem.paymentType || 'full'),
-                productTitle: product.title
+                productTitle: product.title,
+                productSlug: product.slug || ''
             });
         }
 
@@ -139,7 +140,42 @@ if (totalAmountToCharge <= 0 || processedItems.length === 0) {
         let appliedPromotionsData = [];
         let totalCartDiscount = 0;
 
-        if (couponCode) {
+        // =====================================================
+        // 🎉 FESTIVE BUNDLE — server-side price lock
+        // =====================================================
+        // The 3 recorded courses (MS Excel, Gen AI Tools, Power BI) bought
+        // together cost a flat ₹199, whatever their individual prices are.
+        // The price lives ONLY here: the client just sends the three items,
+        // so nobody can name their own bundle price. Coupons do not stack
+        // on top of the bundle.
+        const FESTIVE_BUNDLE_PRICE = 199;
+        // Offer window: the Rs 199 lock only applies inside this window.
+        // Diwali window ends 2026-11-08T23:59:59+05:30. After that the bundle
+        // check below is skipped and the 3 courses price normally.
+        const FESTIVE_OFFER_END = new Date('2026-11-08T23:59:59+05:30');
+        const FESTIVE_BUNDLE_SLUGS = [
+            'ms-excel-with-generative-ai',
+            'gen-ai-tools-mastery',
+            'power-bi-data-visualization'
+        ];
+        const recordedSlugs = processedItems
+            .filter(i => i.planType === 'recorded')
+            .map(i => i.productSlug || '');
+        const isFestiveBundle = processedItems.length === 3 &&
+            FESTIVE_BUNDLE_SLUGS.every(prefix =>
+                recordedSlugs.some(slug => slug.startsWith(prefix)));
+
+        const isFestiveLive = Date.now() <= FESTIVE_OFFER_END.getTime();
+        if (isFestiveLive && isFestiveBundle && cartBaseTotal > FESTIVE_BUNDLE_PRICE) {
+            totalCartDiscount = cartBaseTotal - FESTIVE_BUNDLE_PRICE;
+            cartFinalTotal = FESTIVE_BUNDLE_PRICE;
+            appliedPromotionsData.push({
+                promotionName: 'Diwali Offer: 3-Course Bundle',
+                discountValue: totalCartDiscount
+            });
+        }
+
+        if (couponCode && !isFestiveBundle) {
             const coupon = await Coupon.findOne({ code: couponCode.toUpperCase(), isActive: true });
             
             // Validate coupon exists and hasn't hit usage limits
@@ -343,6 +379,119 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
         res.status(500).json({ message: "Verification Error" });
     }
 });
+
+// =====================================================
+// 3b. RECONCILE PAYMENT (SELF-SERVICE RESTORE)
+// =====================================================
+// A buyer paid at Razorpay but was never enrolled because the
+// browser verify-payment call never completed AND the Razorpay
+// webhook never reached us (e.g. the webhook URL pointed at the
+// frontend domain, which answers 200 with the SPA shell). This
+// endpoint lets the LOGGED-IN buyer restore their own purchase
+// using only the Razorpay payment id from their receipt (pay_...).
+// Safety: the server re-fetches the payment from Razorpay (never
+// trusts the client), requires status 'captured', requires the
+// pending order(s) to belong to the caller, matches the receipt
+// email when present, and never double-fulfills an already-paid
+// order. No admin rights needed; no other user's order can be
+// claimed through it.
+router.post('/reconcile-payment', requireAuth, async (req, res) => {
+    try {
+        const { razorpay_payment_id } = req.body;
+        if (!razorpay_payment_id || typeof razorpay_payment_id !== 'string') {
+            return res.status(400).json({ success: false, message: 'Razorpay payment id is required.' });
+        }
+
+        let payment;
+        try {
+            payment = await razorpay.payments.fetch(razorpay_payment_id.trim());
+        } catch (e) {
+            return res.status(404).json({ success: false, message: 'Payment not found at Razorpay. Check the payment id.' });
+        }
+
+        if (payment.status !== 'captured') {
+            return res.status(400).json({ success: false, message: `Payment is not captured yet (status: ${payment.status}).` });
+        }
+
+        const pendingOrders = await Order.find({ razorpayOrderId: payment.order_id });
+        if (!pendingOrders || pendingOrders.length === 0) {
+            return res.status(404).json({ success: false, message: 'No Upskale order found for this payment.' });
+        }
+
+        const userId = req.user._id;
+        if (pendingOrders[0].userId.toString() !== userId.toString()) {
+            return res.status(403).json({ success: false, message: 'This payment belongs to a different account.' });
+        }
+
+        const receiptEmail = (payment.email || '').toLowerCase();
+        const callerEmail = (req.user.email || '').toLowerCase();
+        if (receiptEmail && callerEmail && receiptEmail !== callerEmail) {
+            return res.status(403).json({ success: false, message: 'This payment belongs to a different account.' });
+        }
+
+        if (pendingOrders[0].status === 'paid') {
+            return res.json({ success: true, alreadyPaid: true, message: 'This purchase was already restored.' });
+        }
+
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+        let userWasUpdated = false;
+
+        for (const order of pendingOrders) {
+            order.status = 'paid';
+            order.razorpayPaymentId = razorpay_payment_id;
+            order.fulfilledVia = 'frontend:reconcile-payment';
+            await order.save();
+
+            const existing = user.enrolledCourses.find(
+                e => e.item.toString() === order.item.toString()
+            );
+
+            if (existing) {
+                if (existing.paymentStatus === 'partial' && order.paymentType === 'full') {
+                    existing.paymentStatus = 'full';
+                    existing.amountPaid += order.amountPaid;
+                    userWasUpdated = true;
+                }
+                if (existing.planType === 'recorded' && order.planType === 'live') {
+                    existing.planType = 'live';
+                    existing.amountPaid += order.amountPaid;
+                    existing.paymentStatus = order.paymentType === 'installment' ? 'partial' : 'full';
+                    userWasUpdated = true;
+                }
+            } else {
+                user.enrolledCourses.push({
+                    item: order.item,
+                    itemModel: order.itemModel || 'Cohort',
+                    planType: order.planType || 'recorded',
+                    paymentStatus: order.paymentType === 'installment' ? 'partial' : 'full',
+                    amountPaid: order.amountPaid,
+                    purchasedAt: new Date()
+                });
+                userWasUpdated = true;
+
+                if (order.itemModel === 'Masterclass') {
+                    await Masterclass.findByIdAndUpdate(order.item, { $inc: { enrolledCount: 1 } });
+                } else if (order.itemModel === 'Cohort') {
+                    await Cohort.findByIdAndUpdate(order.item, { $inc: { enrolledCount: 1 } });
+                }
+            }
+        }
+
+        if (userWasUpdated) {
+            user.markModified('enrolledCourses');
+            await user.save();
+        }
+
+        res.json({ success: true, message: 'Purchase restored. Your courses are now in your account.' });
+
+    } catch (err) {
+        console.error('Reconcile Error:', err);
+        res.status(500).json({ success: false, message: 'Could not restore the purchase. Please try again.' });
+    }
+});
+
 // =====================================================
 // 4. ADMIN ROUTES
 // =====================================================

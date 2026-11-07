@@ -45,8 +45,18 @@ const BiteSizeManager = () => {
 
   const handleEdit = (item) => { setFormData(item); setIsEditing(true); };
 
+  // Custom in-page confirm modal (replaces window.confirm so automated
+  // browser flows and mobile webviews can complete deletions).
+  const [deleteTarget, setDeleteTarget] = useState(null);
+
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this Bite-Sized Course? This cannot be undone.")) return;
+    setDeleteTarget(id);
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteTarget;
+    setDeleteTarget(null);
+    if (!id) return;
     try {
       const res = await fetch(`${BASE_URL}/bitesize-courses/admin/delete/${id}`, {
         method: 'DELETE',
@@ -236,6 +246,18 @@ const BiteSizeManager = () => {
                     );
                 })}
                 {courses.length === 0 && <div className="text-center py-12 text-gray-500 col-span-full">No courses created yet.</div>}
+            </div>
+        )}
+        {deleteTarget && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" data-testid="delete-confirm-modal">
+                <div className="bg-[#141416] border border-white/10 rounded-2xl p-6 max-w-sm w-full">
+                    <h3 className="text-white font-bold text-lg mb-2">Delete this course?</h3>
+                    <p className="text-gray-400 text-sm mb-6">This cannot be undone.</p>
+                    <div className="flex gap-3 justify-end">
+                        <button onClick={() => setDeleteTarget(null)} className="px-4 py-2 rounded-xl bg-white/10 text-white text-sm font-bold" data-testid="delete-cancel">Cancel</button>
+                        <button onClick={confirmDelete} className="px-4 py-2 rounded-xl bg-red-600 text-white text-sm font-bold" data-testid="delete-confirm">Delete</button>
+                    </div>
+                </div>
             </div>
         )}
     </div>

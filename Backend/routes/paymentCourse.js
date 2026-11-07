@@ -5,6 +5,7 @@ const crypto = require('crypto');
 
 const User = require('../models/User');
 const Order = require('../models/Order');
+const Coupon = require('../models/Coupon');
 const { requireAuth } = require('../middleware/auth');
 
 const razorpay = new Razorpay({
@@ -39,6 +40,23 @@ const CATALOGUE = {
                 note: '₹2,000 per month × 6 months, billed monthly'
             }
         }
+    },
+    'excel-mastery-with-ai-tools': {
+        title: 'Excel Mastery with Generative AI',
+        tracks: {
+            recorded: {
+                amount: 199,
+                planType: 'recorded',
+                label: 'Self-Paced Recorded Course',
+                note: 'Lifetime access to all recordings'
+            },
+            live: {
+                amount: 2499,
+                planType: 'live',
+                label: 'Live + AI Cohort',
+                note: 'Live mentorship + recordings + certificate'
+            }
+        }
     }
 };
 
@@ -63,7 +81,7 @@ router.get('/catalogue/:courseKey', (req, res) => {
 // =====================================================
 router.post('/create-order', requireAuth, async (req, res) => {
     try {
-        const { courseKey, trackKey } = req.body;
+        const { courseKey, trackKey, couponCode } = req.body;
         const userId = req.user._id;
 
         const course = CATALOGUE[courseKey];
@@ -75,11 +93,32 @@ router.post('/create-order', requireAuth, async (req, res) => {
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
+        // --- Optional coupon: validated server-side, never trusted from client ---
+        let finalAmount = track.amount;
+        let appliedCoupon = { code: null, discountValue: 0 };
+        if (couponCode) {
+            const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase(), isActive: true });
+            if (!coupon) return res.status(400).json({ success: false, message: 'Invalid coupon code' });
+            if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
+                return res.status(400).json({ success: false, message: 'This coupon has reached its usage limit' });
+            }
+            if (coupon.minOrderValue && track.amount < coupon.minOrderValue) {
+                return res.status(400).json({ success: false, message: `This coupon needs a minimum order of ₹${coupon.minOrderValue}` });
+            }
+            let discount = coupon.discountType === 'percentage'
+                ? Math.floor((track.amount * coupon.discountValue) / 100)
+                : coupon.discountValue;
+            if (discount > track.amount) discount = track.amount;
+            finalAmount = track.amount - discount;
+            appliedCoupon = { code: coupon.code, discountValue: discount };
+            await Coupon.findByIdAndUpdate(coupon._id, { $inc: { usedCount: 1 } });
+        }
+
         const order = await razorpay.orders.create({
-            amount: Math.round(track.amount * 100),
+            amount: Math.round(finalAmount * 100),
             currency: 'INR',
             receipt: `crs_${Date.now()}`,
-            notes: { orderType: course.title, track: track.label, courseKey, trackKey }
+            notes: { orderType: course.title, track: track.label, courseKey, trackKey, coupon: appliedCoupon.code || '' }
         });
 
         await new Order({
@@ -87,7 +126,8 @@ router.post('/create-order', requireAuth, async (req, res) => {
             itemModel: 'Course',
             planType: track.planType,
             basePrice: track.amount,
-            amountPaid: track.amount,
+            amountPaid: finalAmount,
+            appliedCoupon,
             paymentType: trackKey === 'weekend' ? 'installment' : 'one-time',
             razorpayOrderId: order.id,
             status: 'pending'
@@ -97,7 +137,9 @@ router.post('/create-order', requireAuth, async (req, res) => {
             success: true,
             key_id: process.env.RAZORPAY_KEY_ID,
             order_id: order.id,
-            amount: track.amount,
+            amount: finalAmount,
+            baseAmount: track.amount,
+            appliedCoupon,
             description: `${course.title} — ${track.label}`
         });
     } catch (err) {

@@ -6,11 +6,10 @@ import {
     Video, ExternalLink, AlertCircle, CreditCard,
     Copy, Check, Users, Smartphone, MessageCircle, Flame, Trophy,
     ChevronRight, Settings, Edit3, Share2, Gift, Clock, Star, ArrowLeft,
-    BarChart3, Target, TrendingUp, X, Link2, BadgeCheck
+    BarChart3, Target, TrendingUp, X, Link2, BadgeCheck, RefreshCw
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { BASE_URL } from '../config';
-import MobileBottomNav from '../components/MobileBottomNav';
 
 const API_BASE_URL = `${BASE_URL}`;
 
@@ -18,6 +17,7 @@ const ProfilePage = () => {
     const navigate = useNavigate();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [profileError, setProfileError] = useState('');
     const [copied, setCopied] = useState(false);
     const [showEditSheet, setShowEditSheet] = useState(false);
 
@@ -36,6 +36,41 @@ const ProfilePage = () => {
     const [streak, setStreak] = useState(0);
     const [streakAlive, setStreakAlive] = useState(false);
     const [badges, setBadges] = useState([]);
+
+    // Restore purchase (paid at Razorpay but never enrolled)
+    const [restorePaymentId, setRestorePaymentId] = useState('');
+    const [restoring, setRestoring] = useState(false);
+    const [restoreMsg, setRestoreMsg] = useState({ type: '', text: '' });
+
+    const handleRestorePurchase = async () => {
+        const paymentId = restorePaymentId.trim();
+        if (!paymentId) {
+            setRestoreMsg({ type: 'error', text: 'Enter the Razorpay payment id from your receipt (starts with pay_).' });
+            return;
+        }
+        setRestoring(true);
+        setRestoreMsg({ type: '', text: '' });
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${BASE_URL}/cohorts/reconcile-payment`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+                credentials: 'include',
+                body: JSON.stringify({ razorpay_payment_id: paymentId })
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                setRestoreMsg({ type: 'success', text: data.message || 'Purchase restored! Your courses are now in your account.' });
+                setTimeout(() => window.location.reload(), 1500);
+            } else {
+                setRestoreMsg({ type: 'error', text: data.message || 'Could not restore the purchase. Check the payment id and try again.' });
+            }
+        } catch {
+            setRestoreMsg({ type: 'error', text: 'Network error. Please try again.' });
+        } finally {
+            setRestoring(false);
+        }
+    };
 
     const handleCopyLink = () => {
         if (user && user._id) {
@@ -110,6 +145,12 @@ useEffect(() => {
                     setUser(localData);
                     setLoading(false);
                     return;
+                } else {
+                    // Fresh Google login but the session could not be established —
+                    // never fall through to a blank page, surface a recoverable error.
+                    setProfileError('We could not load your profile after Google sign-in. Please try again.');
+                    setLoading(false);
+                    return;
                 }
             }
 
@@ -140,6 +181,7 @@ useEffect(() => {
             }
         } catch (error) {
             console.error("Network error fetching fresh profile details. Using local session.", error);
+            setProfileError('Something went wrong while loading your profile. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -221,7 +263,35 @@ useEffect(() => {
         );
     }
 
-    if (!user) return null;
+    if (!user) {
+        return (
+            <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white px-6">
+                <div className="max-w-sm w-full text-center flex flex-col items-center gap-4">
+                    <div className="w-14 h-14 rounded-full bg-red-500/10 flex items-center justify-center">
+                        <AlertCircle className="w-7 h-7 text-red-400" />
+                    </div>
+                    <h2 className="text-xl font-bold">Couldn't load your profile</h2>
+                    <p className="text-sm text-gray-400">
+                        {profileError || 'Your session could not be loaded. Please try again.'}
+                    </p>
+                    <div className="flex gap-3 mt-2">
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="px-5 py-2.5 rounded-lg bg-[#008a45] text-white text-sm font-semibold hover:bg-[#007a3d]"
+                        >
+                            Try Again
+                        </button>
+                        <button
+                            onClick={() => navigate('/login')}
+                            className="px-5 py-2.5 rounded-lg bg-white/10 text-white text-sm font-semibold hover:bg-white/20"
+                        >
+                            Go to Login
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // Handle profile edit
     const startEditing = () => {
@@ -594,6 +664,38 @@ useEffect(() => {
                         <p className="text-xl font-black text-white">{earnedCertificates}</p>
                         <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mt-0.5">Certs</p>
                     </div>
+                </div>
+
+                {/* ── RESTORE PURCHASE ── */}
+                <div className="bg-[#121212] border border-yellow-500/20 rounded-2xl p-4 mb-6">
+                    <div className="flex items-center gap-2.5 px-1">
+                        <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center shrink-0">
+                            <RefreshCw size={16} className="text-yellow-500" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-bold text-white">Paid but courses missing?</p>
+                            <p className="text-[11px] text-gray-500">Restore your purchase with the Razorpay payment id from your receipt.</p>
+                        </div>
+                    </div>
+                    <div className="flex gap-2 mt-3">
+                        <input
+                            value={restorePaymentId}
+                            onChange={(e) => setRestorePaymentId(e.target.value)}
+                            placeholder="pay_xxxxxxxxxxxxxx"
+                            className="flex-1 min-w-0 bg-white/5 border border-white/10 rounded-xl px-3 py-3 text-sm text-white placeholder:text-gray-500 outline-none focus:border-yellow-500/50"
+                        />
+                        <button
+                            onClick={handleRestorePurchase}
+                            disabled={restoring}
+                            className="shrink-0 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-60 text-black font-black text-sm px-4 rounded-xl transition-all active:scale-95 flex items-center gap-1.5"
+                        >
+                            {restoring ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                            Restore
+                        </button>
+                    </div>
+                    {restoreMsg.text && (
+                        <p className={`text-xs mt-2.5 px-1 ${restoreMsg.type === 'success' ? 'text-green-400' : 'text-red-400'}`}>{restoreMsg.text}</p>
+                    )}
                 </div>
 
                 {/* ── QUICK ACTIONS ── */}
@@ -1105,7 +1207,6 @@ useEffect(() => {
                 </button>
             </div>
 
-            <MobileBottomNav />
         </div>
     );
 };

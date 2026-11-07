@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import axios from 'axios'; // 🔴 1. ADD THIS IMPORT
 import LanguageSwitcher from './components/LanguageSwitcher';
@@ -7,43 +7,56 @@ import './index.css'
 // --- CONTEXT ---
 // --- PAGES ---
 import Home from './pages/Home';
-import LoginPage from './pages/LoginPage';
-import ProfilePage from './pages/ProfilePage';
-import Dashboard from './pages/Dashboard';
-import PremiumPage from './pages/PremiumPage';
+const LoginPage = lazy(() => import('./pages/LoginPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const PremiumPage = lazy(() => import('./pages/PremiumPage'));
 
 // Course Pages
-import PowerBICoursePage from './pages/PowerBICoursePage';
-import ExcelCoursePage from './pages/ExcelCoursePage';
-import GenAICoursePage from './pages/GenAICoursePage';
-import DynamicCoursePage from './pages/DynamicCoursePage';
-import ExcelPlaylistPage from './pages/ExcelPlaylistPage';
+const PowerBICoursePage = lazy(() => import('./pages/PowerBICoursePage'));
+const ExcelCoursePage = lazy(() => import('./pages/ExcelCoursePage'));
+const GenAICoursePage = lazy(() => import('./pages/GenAICoursePage'));
+const DynamicCoursePage = lazy(() => import('./pages/DynamicCoursePage'));
+const ExcelPlaylistPage = lazy(() => import('./pages/ExcelPlaylistPage'));
 
 // Cart & Checkout
-import CartPage from './pages/CartPage';
-import MasterclassCartPage from './pages/MasterclassCartPage';
-import RecartPage from './pages/Recordedcartpage';
+const CartPage = lazy(() => import('./pages/CartPage'));
+const MasterclassCartPage = lazy(() => import('./pages/MasterclassCartPage'));
+const RecartPage = lazy(() => import('./pages/Recordedcartpage'));
 
 // Masterclass & Certificates
-import MasterclassLanding from './pages/masterclass/MasterclassLanding';
-import EcommerceTshirtCourse from './pages/EcommerceTshirtCourse';
-import StudentCertificateView from './pages/StudentCertificateView';
+const MasterclassLanding = lazy(() => import('./pages/masterclass/MasterclassLanding'));
+const EcommerceTshirtCourse = lazy(() => import('./pages/EcommerceTshirtCourse'));
+const StudentCertificateView = lazy(() => import('./pages/StudentCertificateView'));
 
-import BiteSizeCoursePage from './pages/Bbitsize/BiteSizeCoursePage'
-import ChapterModuleBuilder from './components/ChapterModuleBuilder'
+const BiteSizeCoursePage = lazy(() => import('./pages/Bbitsize/BiteSizeCoursePage'));
+const ChapterModuleBuilder = lazy(() => import('./components/ChapterModuleBuilder'));
 import ErrorBoundary from './components/ErrorBoundary'
-import PlanSelectionPage from './pages/PlanSelectionPage';
-import BiteSizeCheckout from './pages/BiteSizeCheckout'
-import ModernCertificateView from './components/ModernCertificateView'; 
+const PlanSelectionPage = lazy(() => import('./pages/PlanSelectionPage'));
+const BiteSizeCheckout = lazy(() => import('./pages/BiteSizeCheckout'));
+const ModernCertificateView = lazy(() => import('./components/ModernCertificateView'));
 
-import MyLibraryPage from './pages/MyLibraryPage';
-import RecordedCourseLandingPage from './pages/RecordedCourseLandingPage';
+const MyLibraryPage = lazy(() => import('./pages/MyLibraryPage'));
+const RecordedCourseLandingPage = lazy(() => import('./pages/RecordedCourseLandingPage'));
+const FestiveOfferPage = lazy(() => import('./pages/FestiveOfferPage'));
 
-import StudentControlCenter from './pages/StudentControlCenter';
+const StudentControlCenter = lazy(() => import('./pages/StudentControlCenter'));
 
 // ==========================================
 // 🔴 2. GLOBAL SESSION MANAGER
 // ==========================================
+// Attach the JWT as a Bearer <redacted> on every axios request. The cookie is
+// cross-site (upskale.co → api.upskale.co) and browsers that block
+// third-party cookies drop it — without this, checkout create-order calls
+// 401 and payments never reach the backend.
+axios.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers = config.headers || {};
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 axios.interceptors.response.use(
   (response) => response, // Let successful responses pass
   (error) => {
@@ -75,11 +88,19 @@ const ScrollToTop = () => {
 
 import MobileBottomNav from './components/MobileBottomNav';
 
+// Shown for the moment a page's code is downloading.
+const RouteLoader = () => (
+  <div className="min-h-screen bg-[#0A0A0B] flex items-center justify-center">
+    <div className="w-9 h-9 rounded-full border-2 border-white/15 border-t-[#008a45] animate-spin" />
+  </div>
+);
+
 function App() {
   return (
       <Router>
         <ScrollToTop />
         <LanguageSwitcher />
+        <Suspense fallback={<RouteLoader />}>
         <Routes>
           {/* Main Website */}
           <Route path="/" element={<Home />} />
@@ -103,6 +124,7 @@ function App() {
           {/* Dynamic Routes */}
           <Route path="/course/:slug" element={<DynamicCoursePage />} />
           <Route path="/recorded-course/:slug" element={<RecordedCourseLandingPage />} />
+          <Route path="/festive-offer" element={<FestiveOfferPage />} />
           <Route path="/learn/:cohortId" element={<ExcelPlaylistPage />} />
           <Route path="/pro" element={<PlanSelectionPage />} />
           <Route path="/bitesize/:slug" element={<ErrorBoundary><BiteSizeCoursePage /></ErrorBoundary>} />
@@ -121,6 +143,7 @@ function App() {
           {/* 404 Fallback */}
           <Route path="*" element={<Home />} />
         </Routes>
+        </Suspense>
         <MobileBottomNav />
       </Router>
   );

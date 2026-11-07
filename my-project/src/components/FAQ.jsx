@@ -2,47 +2,45 @@ import { useState } from "react";
 
 const faqs = [
   {
-    q: "How do I receive my certificate after completing a program?",
-    a: "Our system automatically tracks your attendance, progress, and assessments. Once you meet the required criteria, your certificate is generated and available in your dashboard for download.",
+    q: "How do I get my certificate?",
+    a: "Finish the course and clear the final assessment — your certificate unlocks automatically in your profile. Download it anytime.",
   },
   {
-    q: "Do I need to attend live sessions to get certified?",
-    a: "Yes. For masterclasses and cohort programs, attendance is mandatory. For bite-size courses, you must complete lessons and pass the MCQ test to qualify for certification.",
+    q: "Are the courses beginner-friendly?",
+    a: "Yes. Every course starts from zero and builds up with real, practical lessons. No prior experience needed.",
   },
   {
-    q: "How does the OTP login system work?",
-    a: "You can log in securely using your mobile number and OTP. No passwords to remember. This makes access simple and fast for all students.",
+    q: "How do I sign in?",
+    a: "One tap with your Google account. No passwords, no OTPs to wait for.",
   },
   {
-    q: "Are the programs beginner friendly?",
-    a: "Absolutely. We start from fundamentals and gradually move to advanced concepts with real projects, making it suitable for beginners as well as working professionals.",
+    q: "What is Swipes Pro?",
+    a: "Our short-course subscription. Start with a ₹1 3-day trial, then ₹99/month or ₹599/year. Every course comes with a certificate.",
   },
   {
-    q: "Will I get job or placement support?",
-    a: "Our 3-month and 6-month cohort programs are designed to make you job-ready with projects, mock interviews, and mentorship support.",
+    q: "Do I get recordings of live sessions?",
+    a: "Yes. Every live masterclass and cohort session is recorded — miss nothing, rewatch anytime.",
   },
   {
-    q: "Can I access recordings if I miss a live session?",
-    a: "Yes, recordings are provided for masterclasses and cohort sessions so you never miss the learning.",
-  },
-  {
-    q: "Is there any refund policy?",
-    a: "Yes. If you are not satisfied after the first session, you can request a refund as per our policy terms.",
+    q: "What if I'm not happy with a course?",
+    a: "Tell us after the first session and we'll sort a refund as per our policy. Simple.",
   },
 ];
 
 const FAQItem = ({ q, a, isOpen, toggle }) => {
   return (
-    <div className="border-b border-gray-200 py-5">
+    <div className="border-b border-white/10 py-5">
       <button
         onClick={toggle}
-        className="w-full flex justify-between items-center text-left"
+        className="w-full flex justify-between items-center text-left gap-4"
       >
-        <h3 className="text-lg font-semibold text-gray-900">{q}</h3>
-        <span className="text-2xl text-red-600">{isOpen ? "−" : "+"}</span>
+        <h3 className="text-[16px] font-bold text-white">{q}</h3>
+        <span className={`shrink-0 w-8 h-8 rounded-full border flex items-center justify-center text-lg transition-all ${isOpen ? 'bg-red-600 border-red-600 text-white' : 'border-white/20 text-gray-400'}`}>
+          {isOpen ? "−" : "+"}
+        </span>
       </button>
       {isOpen && (
-        <p className="mt-3 text-gray-600 leading-relaxed text-sm">{a}</p>
+        <p className="mt-3 text-gray-400 leading-relaxed text-sm pr-10">{a}</p>
       )}
     </div>
   );
@@ -56,15 +54,15 @@ const FAQ = () => {
   };
 
   return (
-    <section className="py-24 px-6 bg-white">
-      <div className="max-w-4xl mx-auto">
-        <div className="text-center mb-14">
-          <h2 className="text-4xl font-black text-gray-900 mb-4">
-            Frequently Asked Questions
-          </h2>
-          <p className="text-gray-500 text-lg">
-            Everything you need to know before joining our programs.
+    <section className="py-16 md:py-20 px-4 md:px-6 bg-[#0A0A0B]">
+      <div className="max-w-3xl mx-auto">
+        <div className="mb-10">
+          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-red-500 mb-2">
+            Got questions?
           </p>
+          <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+            Quick answers.
+          </h2>
         </div>
 
         <div>

@@ -16,6 +16,11 @@ const PlanSelectionPage = () => {
     const [previewLocked, setPreviewLocked] = useState(false);
     const previewVideoRef = useRef(null);
 
+    // Coupon state
+    const [couponCode, setCouponCode] = useState('');
+    const [appliedCoupon, setAppliedCoupon] = useState(null);
+    const [couponMsg, setCouponMsg] = useState(null);
+
     // 🔴 AUTH STATE 
     const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
     const [showLoginModal, setShowLoginModal] = useState(false);
@@ -91,13 +96,24 @@ const PlanSelectionPage = () => {
             return;
         }
 
+        // The API accepts a cookie OR a Bearer <redacted> The cookie is cross-site
+        // (upskale.co → api.upskale.co) and browsers that block third-party cookies
+        // drop it, so the token is sent explicitly the way the rest of the app does.
+        const authHeaders = () => {
+            const token = localStorage.getItem('token');
+            return {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {})
+            };
+        };
+
         setProcessingPayment(true);
         try {
             const initRes = await fetch(`${BASE_URL}/bitesize-courses/create-checkout`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 credentials: 'include',
-                body: JSON.stringify({ planType: selectedPlan })
+                body: JSON.stringify({ planType: selectedPlan, couponCode: appliedCoupon ? couponCode.trim() : undefined })
             });
 
             const initData = await initRes.json();
@@ -117,6 +133,25 @@ const PlanSelectionPage = () => {
                 return;
             }
 
+            // FREE ACTIVATION via coupon — no Razorpay, subscription already active
+            if (initData.success && initData.isFree) {
+                try {
+                    const freshUserRes = await fetch(`${BASE_URL}/user/${currentUser._id}`, {
+                        method: 'GET',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include'
+                    });
+                    if (freshUserRes.ok) {
+                        const freshUser = await freshUserRes.json();
+                        localStorage.setItem('user', JSON.stringify(freshUser));
+                        setCurrentUser(freshUser);
+                    }
+                } catch (e) { console.error("Could not fetch fresh user data", e); }
+                alert("Coupon applied! Welcome to PRO.");
+                navigate(returnPath, { replace: true });
+                return;
+            }
+
             const options = {
                 key: initData.key_id,
                 amount: initData.amount * 100, 
@@ -133,7 +168,7 @@ const PlanSelectionPage = () => {
                     try {
                         const verifyRes = await fetch(`${BASE_URL}/bitesize-courses/verify-payment`, {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: authHeaders(),
                             credentials: 'include',
                             body: JSON.stringify({
                                 razorpay_order_id: response.razorpay_order_id,
@@ -374,6 +409,53 @@ const PlanSelectionPage = () => {
                                         </div>
                                     </div>
                                     
+                                    {/* COUPON */}
+                                    <div className="mb-4">
+                                        {appliedCoupon ? (
+                                            <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3">
+                                                <span className="text-emerald-400 text-sm font-bold">✓ {appliedCoupon.code} applied</span>
+                                                <button onClick={() => { setAppliedCoupon(null); setCouponCode(''); setCouponMsg(null); }} className="text-gray-400 text-xs underline">Remove</button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        value={couponCode}
+                                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                                        placeholder="Coupon code"
+                                                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#eab308]/60 uppercase"
+                                                    />
+                                                    <button
+                                                        onClick={async () => {
+                                                            if (!couponCode.trim()) return;
+                                                            setCouponMsg({ type: 'loading', text: 'Checking...' });
+                                                            try {
+                                                                const res = await fetch(`${BASE_URL}/coupons/verify`, {
+                                                                    method: 'POST',
+                                                                    headers: { 'Content-Type': 'application/json' },
+                                                                    body: JSON.stringify({ code: couponCode.trim(), orderAmount: selectedPlan === 'monthly' ? 99 : selectedPlan === 'yearly' ? 599 : 1 })
+                                                                });
+                                                                const data = await res.json();
+                                                                if (res.ok && data.success) {
+                                                                    setAppliedCoupon({ code: data.code });
+                                                                    setCouponMsg({ type: 'success', text: `Coupon applied! ₹${data.totalDiscount || 0} off.` });
+                                                                } else {
+                                                                    setCouponMsg({ type: 'error', text: data.message || 'Invalid coupon' });
+                                                                }
+                                                            } catch (e) { setCouponMsg({ type: 'error', text: 'Could not verify coupon' }); }
+                                                        }}
+                                                        className="bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-5 rounded-xl transition-colors"
+                                                    >
+                                                        Apply
+                                                    </button>
+                                                </div>
+                                                {couponMsg && (
+                                                    <p className={`text-xs mt-2 ${couponMsg.type === 'error' ? 'text-red-400' : couponMsg.type === 'success' ? 'text-emerald-400' : 'text-gray-400'}`}>{couponMsg.text}</p>
+                                                )}
+                                            </>
+                                        )}
+                                    </div>
+
                                     <button 
                                         onClick={handleProceedToPayment} 
                                         disabled={processingPayment}

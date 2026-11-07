@@ -60,7 +60,7 @@ const SarkariSection = () => {
         <div>
            <div className="flex items-center gap-2 mb-2">
               <Sparkles className="text-[#008a45]" size={16} />
-              <span className="text-[#008a45] font-bold text-xs uppercase tracking-[0.2em]">Bites</span>
+              <span className="text-[#008a45] font-bold text-xs uppercase tracking-[0.2em]">Swipes</span>
            </div>
            
            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight leading-none">

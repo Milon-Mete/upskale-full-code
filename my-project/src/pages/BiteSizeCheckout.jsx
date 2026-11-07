@@ -96,10 +96,20 @@ const BiteSizeCheckout = () => {
 
         setProcessingPayment(true);
         try {
+            // The API accepts a cookie OR a Bearer <redacted> The cookie is cross-site
+            // (upskale.co → api.upskale.co) and browsers that block third-party cookies
+            // drop it, so the token is sent explicitly the way the rest of the app does.
+            const authHeaders = () => {
+                const token = localStorage.getItem('token');
+                return {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {})
+                };
+            };
             // 🔴 SECURED SUBSCRIPTION CHECKOUT
             const initRes = await fetch(`${BASE_URL}/bitesize-courses/create-checkout`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: authHeaders(),
                 credentials: 'include', 
                 // Notice: We NO LONGER send courseId. We only send planType.
                 body: JSON.stringify({ planType }) 
@@ -132,7 +142,7 @@ const BiteSizeCheckout = () => {
                     
                     const verifyRes = await fetch(`${BASE_URL}/bitesize-courses/verify-payment`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: authHeaders(),
                         credentials: 'include',
                         body: JSON.stringify({
                             razorpay_order_id: response.razorpay_order_id,

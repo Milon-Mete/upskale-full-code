@@ -144,7 +144,7 @@ const GenAICoursePage = () => {
   { title: "Module 5: Voiceovers & Cloning", color: "from-pink-500 to-rose-600", shadow: "shadow-pink-500/20", items: ["AI Voice Synthesis", "Voice Cloning Techniques", "Multilingual Ad Dubbing"], icon: Mic },
   { title: "Module 6: Rapid Reports & Presentations", color: "from-rose-500 to-orange-600", shadow: "shadow-rose-500/20", items: ["AI Pitch Deck Creation", "Automated Business Reports", "Data Visualization with AI"], icon: Layout },
   { title: "Module 7: Upskale Your LinkedIn", color: "from-orange-500 to-amber-600", shadow: "shadow-orange-500/20", items: ["Personal Branding with AI", "AI Content Strategy", "LinkedIn Profile Optimization"], icon: Users },
-  { title: "Module 8: AI Portfolio Builder", color: "to-yellow-from-amber-500 600", shadow: "shadow-amber-500/20", items: ["Zero-Code Website Builders", "AI Landing Page Design", "Hosting your Portfolio"], icon: Globe },
+  { title: "Module 8: AI Portfolio Builder", color: "from-amber-500 to-yellow-600", shadow: "shadow-amber-500/20", items: ["Zero-Code Website Builders", "AI Landing Page Design", "Hosting your Portfolio"], icon: Globe },
   { title: "Module 9: Special Class & Allotment", color: "from-emerald-500 to-green-600", shadow: "shadow-emerald-500/20", items: ["Expert Masterclass", "Assignment Guidelines", "Industry Q&A Session"], icon: BookOpen },
   { title: "Module 10: Capstone Tracks", color: "from-teal-500 to-cyan-600", shadow: "shadow-teal-500/20", items: ["Business & Branding Track", "Creative & Design Track", "Strategy Development"], icon: Target },
   { title: "Module 11: Project & Evaluation", color: "from-cyan-500 to-blue-600", shadow: "shadow-cyan-500/20", items: ["Project Submission", "Peer Review & Feedback", "Performance Metrics"], icon: Briefcase },
@@ -517,7 +517,7 @@ const GenAICoursePage = () => {
       <div className="fixed bottom-0 left-0 w-full bg-black/90 backdrop-blur-lg border-t border-white/10 p-4 z-50 md:hidden pb-safe">
         {loading ? null : accessLevel ? (
            // --- MOBILE: PURCHASED STATE ---
-           <button onClick={() => navigate('/dashboaprofilerd')} className="w-full bg-green-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2">
+           <button onClick={() => navigate('/profile')} className="w-full bg-green-500 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2">
              <Unlock size={18} /> Go to Profile
            </button>
         ) : (

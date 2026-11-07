@@ -120,6 +120,16 @@ const MasterclassCartPage = () => {
     if (!isLoggedIn) { setShowLoginModal(true); return; }
 
     const user = JSON.parse(localStorage.getItem('user'));
+    // The API accepts a cookie OR a Bearer <redacted> The cookie is cross-site
+    // (upskale.co → api.upskale.co) and browsers that block third-party cookies
+    // drop it, so the token is sent explicitly the way the rest of the app does.
+    const authHeaders = () => {
+      const token = localStorage.getItem('token');
+      return {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
+    };
     const CREATE_ORDER_URL = `${BASE_URL}/masterclasses/create-order`;
     const VERIFY_URL = `${BASE_URL}/masterclasses/verify-payment`;
 
@@ -132,12 +142,18 @@ const MasterclassCartPage = () => {
     try {
       const orderRes = await fetch(CREATE_ORDER_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: authHeaders(),
         credentials: 'include',
         body: JSON.stringify(requestBody),
       });
       const data = await orderRes.json();
-      if (!orderRes.ok) { alert(data.message || "Order Creation Failed"); return; }
+      if (!orderRes.ok) {
+        if (orderRes.status === 401) {
+          alert("Your session has expired. Please log in again to continue.");
+          setShowLoginModal(true); return;
+        }
+        alert(data.message || "Order Creation Failed"); return;
+      }
 
       // 🔴 Handle Free Masterclass Direct Completion
       if (data.success && data.isFree) {
@@ -167,7 +183,7 @@ const MasterclassCartPage = () => {
         handler: async function (response) {
           const verifyRes = await fetch(VERIFY_URL, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: authHeaders(),
             credentials: 'include',
             body: JSON.stringify(response),
           });

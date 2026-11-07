@@ -29,9 +29,11 @@ const masterclassSchema = new mongoose.Schema({
     discounted: { type: Number, required: true }
   },
 
-  // Content
-  whatYouWillLearn: { type: [String], default: [] },
-  whoIsThisFor: [String],
+  // Content — Mixed so the landing page's rich objects ({title, desc} /
+  // {label, icon}) and plain strings both persist and render.
+  whatYouWillLearn: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  whoIsThisFor: { type: [mongoose.Schema.Types.Mixed], default: [] },
+  bonuses: { type: [mongoose.Schema.Types.Mixed], default: [] },
   
   faqs: [{ question: String, answer: String }],
   reviews: [{ studentName: String, rating: Number, comment: String }],
@@ -67,7 +69,10 @@ masterclassSchema.virtual('isExpired').get(function () {
 
 // Auto-Slug Logic
 masterclassSchema.pre('save', async function() {
-  if (this.isModified('title') || this.isNew) {
+  // Only (re)generate the slug from the title when the slug itself wasn't
+  // explicitly set — otherwise scripts that pin a slug (e.g. 'excel-masterclass')
+  // would get it silently overwritten on insert.
+  if ((this.isModified('title') || this.isNew) && !this.isModified('slug')) {
     let baseSlug = this.title.toLowerCase().trim()
       .replace(/[^\w\s-]/g, '')
       .replace(/[\s_-]+/g, '-')

@@ -199,10 +199,25 @@ const EcommerceTshirtCourse = () => {
     };
   };
 
-  const handleEnroll = async () => {
+  // LoginPage/ProfilePage only honour sessionStorage 'redirectAfterLogin'
+  // (router state is ignored), so set it before sending the user to /login.
+  // 'ecomCheckoutPending' lets the page resume checkout automatically when
+  // the user lands back here after Google sign-in.
+  const sendToLogin = (trackKey) => {
+    sessionStorage.setItem('redirectAfterLogin', '/ecommerce-tshirt-business');
+    sessionStorage.setItem('ecomCheckoutPending', JSON.stringify({
+      track: trackKey,
+      at: Date.now()
+    }));
+    navigate('/login');
+  };
+
+  const handleEnroll = async (trackOverride) => {
+    // CtaButton passes the click event here; only a string is a real track.
+    const useTrack = typeof trackOverride === 'string' ? trackOverride : track;
     const user = getUser();
     if (!user) {
-      navigate('/login', { state: { returnTo: '/ecommerce-tshirt-business' } });
+      sendToLogin(useTrack);
       return;
     }
     if (paying) return;
@@ -213,7 +228,7 @@ const EcommerceTshirtCourse = () => {
         method: 'POST',
         headers: authHeaders(),
         credentials: 'include',
-        body: JSON.stringify({ courseKey: COURSE_KEY, trackKey: track })
+        body: JSON.stringify({ courseKey: COURSE_KEY, trackKey: useTrack })
       });
       const data = await orderRes.json();
       if (!orderRes.ok || !data.success) {
@@ -222,7 +237,7 @@ const EcommerceTshirtCourse = () => {
         // "try again" that will fail identically every time.
         if (orderRes.status === 401) {
           alert('Your session has expired. Please log in again to continue.');
-          navigate('/login', { state: { returnTo: '/ecommerce-tshirt-business' } });
+          sendToLogin(useTrack);
         } else {
           alert(data.message || 'Could not start the payment. Please try again.');
         }
@@ -267,6 +282,28 @@ const EcommerceTshirtCourse = () => {
       setPaying(false);
     }
   };
+
+  // Auto-resume: user clicked Enroll, got sent to Google login, and is now
+  // back on this page signed in. Re-open checkout once, automatically,
+  // for the same track they had picked.
+  const autoResumedRef = useRef(false);
+  useEffect(() => {
+    if (autoResumedRef.current) return;
+    const raw = sessionStorage.getItem('ecomCheckoutPending');
+    if (!raw) return;
+    let pending;
+    try { pending = JSON.parse(raw); } catch { sessionStorage.removeItem('ecomCheckoutPending'); return; }
+    if (Date.now() - (pending?.at || 0) > 15 * 60 * 1000) {
+      sessionStorage.removeItem('ecomCheckoutPending');
+      return;
+    }
+    if (!getUser()) return;
+    autoResumedRef.current = true;
+    sessionStorage.removeItem('ecomCheckoutPending');
+    if (pending.track) setTrack(pending.track);
+    handleEnroll(pending.track);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const CtaButton = ({ label, className = '' }) => (
     <button

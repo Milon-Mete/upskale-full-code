@@ -871,14 +871,10 @@ app.post('/api/admin/issue-certificate', adminOnly, async (req, res) => {
         courseObj = await Cohort.findOne({ title: titleRegex });
     } else if (foundModelType === 'Masterclass') {
         courseObj = await Masterclass.findOne({ title: titleRegex });
-    } else if (foundModelType === 'Course') {
-        courseObj = await Course.findOne({ title: titleRegex });
     }
+    // NOTE: There is no Course model in this codebase — skip it and fall
+    // through to the generic Cohort/Masterclass lookup below.
 
-    if (!courseObj) {
-        courseObj = await Course.findOne({ title: titleRegex });
-        if (courseObj) foundModelType = 'Course';
-    }
     if (!courseObj) {
         courseObj = await Cohort.findOne({ title: titleRegex });
         if (courseObj) foundModelType = 'Cohort';
@@ -1052,16 +1048,17 @@ app.post('/api/admin/issue-external-certificate', adminOnly, async (req, res) =>
   }
 
   try {
-    let courseObj = await Course.findOne({ title: { $regex: new RegExp(`^${courseName}$`, 'i') } });
-    let foundModelType = 'Course'; 
+    // NOTE: There is no Course model in this codebase — look up Cohorts and
+    // Masterclasses only. Also escape regex chars in the course name.
+    const safeTitle = courseName.trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const extTitleRegex = new RegExp(`^${safeTitle}$`, 'i');
+
+    let courseObj = await Cohort.findOne({ title: extTitleRegex });
+    let foundModelType = 'Cohort';
 
     if (!courseObj) {
-        courseObj = await Cohort.findOne({ title: { $regex: new RegExp(`^${courseName}$`, 'i') } });
-        if(courseObj) foundModelType = 'Cohort'; 
-    }
-    if (!courseObj) {
-        courseObj = await Masterclass.findOne({ title: { $regex: new RegExp(`^${courseName}$`, 'i') } });
-        if(courseObj) foundModelType = 'Masterclass'; 
+        courseObj = await Masterclass.findOne({ title: extTitleRegex });
+        if (courseObj) foundModelType = 'Masterclass';
     }
 
     if (!courseObj) {

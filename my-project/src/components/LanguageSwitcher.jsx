@@ -7,6 +7,12 @@ const LanguageSwitcher = () => {
 
     useEffect(() => {
         setIsMounted(true);
+    }, []);
+
+    useEffect(() => {
+        // Google's script is heavy on phones, so load it on first open. A visitor
+        // who already picked a language has the googtrans cookie and needs it now.
+        if (!isOpen && !document.cookie.includes('googtrans=')) return;
 
         const initGoogleTranslate = () => {
             if (window.google && window.google.translate) {
@@ -26,7 +32,7 @@ const LanguageSwitcher = () => {
             script.async = true;
             document.body.appendChild(script);
         }
-    }, []);
+    }, [isOpen]);
 
     if (!isMounted) return null;
 
@@ -57,7 +63,7 @@ const LanguageSwitcher = () => {
             `}} />
 
             <div 
-                className={`fixed top-4 right-4 z-[9999] flex items-center width-transition overflow-hidden ${
+                className={`fixed bottom-[116px] right-3 md:bottom-24 md:right-4 z-[9999] flex items-center width-transition overflow-hidden ${
                     isOpen 
                     ? 'bg-[#0a0a0a] border border-[#222] p-3 rounded-lg shadow-2xl w-[260px]' 
                     : 'bg-white/90 backdrop-blur-sm border border-gray-200 p-2 rounded-full shadow-md w-[36px] h-[36px] hover:bg-white cursor-pointer justify-center'

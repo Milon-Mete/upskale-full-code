@@ -9,6 +9,7 @@ const BiteSizeCourse = require('../models/BiteSizeCourse');
 const User = require('../models/User');
 const Order = require('../models/Order');
 const Certificate = require('../models/Certificate');
+const Coupon = require('../models/Coupon');
 
 const { requireAuth, adminOnly } = require('../middleware/auth');
 
@@ -169,7 +170,7 @@ router.get('/:slug', async (req, res) => {
 
 router.post('/create-checkout', requireAuth, async (req, res) => {
     try {
-        const { planType } = req.body;
+        const { planType, couponCode } = req.body;
         const userId = req.user._id;
         const user = await User.findById(userId);
         if (!user) return res.status(404).json({ message: "User not found" });
@@ -179,8 +180,65 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
         }
 
         const planPrices = { trial: 1, monthly: 99, yearly: 599 };
-        const amountToCharge = planPrices[planType];
-        if (!amountToCharge) return res.status(400).json({ message: "Invalid Plan Type" });
+        const basePrice = planPrices[planType];
+        if (!basePrice) return res.status(400).json({ message: "Invalid Plan Type" });
+
+        // --- Optional coupon: validated server-side, never trusted from client ---
+        let amountToCharge = basePrice;
+        let appliedCoupon = { code: null, discountValue: 0 };
+        if (couponCode) {
+            const coupon = await Coupon.findOne({ code: String(couponCode).toUpperCase(), isActive: true });
+            if (!coupon) return res.status(400).json({ success: false, message: 'Invalid coupon code' });
+            if (coupon.validUntil && new Date() > coupon.validUntil) {
+                return res.status(400).json({ success: false, message: 'Coupon expired' });
+            }
+            if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
+                return res.status(400).json({ success: false, message: 'This coupon has reached its usage limit' });
+            }
+            if (coupon.minOrderValue && basePrice < coupon.minOrderValue) {
+                return res.status(400).json({ success: false, message: `This coupon needs a minimum order of ₹${coupon.minOrderValue}` });
+            }
+            let discount = coupon.discountType === 'percentage'
+                ? Math.floor((basePrice * coupon.discountValue) / 100)
+                : coupon.discountValue;
+            if (discount > basePrice) discount = basePrice;
+            amountToCharge = basePrice - discount;
+            appliedCoupon = { code: coupon.code, discountValue: discount };
+        }
+
+        // --- FREE ACTIVATION (₹0 after coupon): no Razorpay, activate directly ---
+        if (amountToCharge === 0) {
+            let daysToAdd = 0;
+            if (planType === 'trial') daysToAdd = 3;
+            if (planType === 'monthly') daysToAdd = 30;
+            if (planType === 'yearly') daysToAdd = 365;
+
+            let currentExpiration = user.biteSizeSubscription?.expiresAt;
+            let baseDate = (currentExpiration && new Date(currentExpiration) > new Date()) ? new Date(currentExpiration) : new Date();
+            const newExpirationDate = new Date(baseDate.getTime() + (daysToAdd * 24 * 60 * 60 * 1000));
+            const isTrialNow = planType === 'trial';
+            const wasTrialUsedBefore = user.biteSizeSubscription?.trialUsed || false;
+
+            await User.updateOne(
+                { _id: userId },
+                { $set: { biteSizeSubscription: { status: 'active', planType, expiresAt: newExpirationDate, trialUsed: isTrialNow ? true : wasTrialUsedBefore } } }
+            );
+
+            if (appliedCoupon.code) {
+                await Coupon.findOneAndUpdate({ code: appliedCoupon.code }, { $inc: { usedCount: 1 } });
+            }
+
+            await new Order({
+                userId, itemModel: 'Subscription',
+                basePrice, amountPaid: 0,
+                appliedCoupon: appliedCoupon.code ? appliedCoupon : undefined,
+                planType, paymentType: 'one-time',
+                razorpayOrderId: `free_sub_${Date.now()}_${userId.toString().slice(-4)}`,
+                status: 'paid', fulfilledVia: 'free_coupon'
+            }).save();
+
+            return res.json({ success: true, isFree: true, message: 'Subscription activated!' });
+        }
 
         const order = await razorpay.orders.create({
             amount: Math.round(amountToCharge * 100),
@@ -191,13 +249,14 @@ router.post('/create-checkout', requireAuth, async (req, res) => {
 
         const newOrder = new Order({
             userId, itemModel: 'Subscription',
-            basePrice: amountToCharge, amountPaid: amountToCharge,
+            basePrice, amountPaid: amountToCharge,
+            appliedCoupon: appliedCoupon.code ? appliedCoupon : undefined,
             planType, paymentType: 'one-time',
             razorpayOrderId: order.id, status: 'pending'
         });
         await newOrder.save();
 
-        res.json({ success: true, key_id: process.env.RAZORPAY_KEY_ID, order_id: order.id, amount: amountToCharge, description: 'BiteSize ' + planType.toUpperCase() + ' Access' });
+        res.json({ success: true, key_id: process.env.RAZORPAY_KEY_ID, order_id: order.id, amount: amountToCharge, baseAmount: basePrice, appliedCoupon, description: 'BiteSize ' + planType.toUpperCase() + ' Access' });
     } catch (err) {
         console.error("Checkout Init Failed:", err);
         res.status(500).json({ message: "Payment Initialization Failed" });

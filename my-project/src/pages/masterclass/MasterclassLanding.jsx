@@ -25,6 +25,13 @@ const LOGO_URL = 'https://res.cloudinary.com/villain/image/upload/v1770662332/20
 const MasterclassLanding = () => {
   const { slug } = useParams();
   const navigate = useNavigate();
+
+  // Old slug retired — the AI workshop now lives at its auto-generated slug
+  useEffect(() => {
+    if (slug === 'excel-masterclass') {
+      navigate('/masterclass/10x-work-productive-gen-ai-workshop', { replace: true });
+    }
+  }, [slug]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [activeFaq, setActiveFaq] = useState(null);
@@ -89,6 +96,11 @@ const MasterclassLanding = () => {
   }, []);
   const mm = String(Math.floor(secondsLeft / 60)).padStart(2, '0');
   const ss = String(secondsLeft % 60).padStart(2, '0');
+
+  // Price-aware copy: "FREE" wording only when the ticket itself costs nothing
+  const ticketPrice = data.price?.discounted || 0;
+  const isFree = ticketPrice === 0;
+  const priceLabel = isFree ? 'FREE' : `₹${ticketPrice}`;
 
   // 🔴 SILENT BACKGROUND USER REFRESH
   useEffect(() => {
@@ -182,15 +194,20 @@ const MasterclassLanding = () => {
     <div className="rounded-2xl p-6 text-center" style={{ background: CARD, border: `1px solid ${BORDER}` }}>
       <p className="text-xs font-bold uppercase tracking-widest" style={{ color: MUTE }}>Your seat for this workshop is</p>
       <div className="text-6xl font-black mt-2" style={{ color: GREEN }}>
-        FREE
+        {priceLabel}
       </div>
+      {!isFree && data.price?.original > ticketPrice && (
+        <div className="text-sm font-semibold mt-1" style={{ color: MUTE }}>
+          <s>₹{data.price.original}</s>
+        </div>
+      )}
       <div className="flex items-center justify-center gap-4 mt-5 text-sm" style={{ color: INK }}>
         <span className="inline-flex items-center gap-1.5 font-semibold"><Calendar size={15} style={{ color: CLAY }} /> {formatDate(data.schedule.startDate)}</span>
       </div>
       <div className="flex items-center justify-center gap-1.5 mt-2 text-sm font-semibold" style={{ color: INK }}>
         <Clock size={15} style={{ color: CLAY }} /> {data.schedule.startTime} – {data.schedule.endTime} IST
       </div>
-      <CtaButton label={isPurchased ? 'Go to Your Profile' : 'Register Now — It\'s Free'} className="w-full mt-6 py-4 text-lg" />
+      <CtaButton label={isPurchased ? 'Go to Your Profile' : (isFree ? 'Register Now — It\'s Free' : `Register Now — Just ₹${ticketPrice}`)} className="w-full mt-6 py-4 text-lg" />
       {!compact && (
         <>
           <p className="text-xs font-semibold mt-4" style={{ color: MUTE }}>Limited seats — closing in</p>
@@ -214,7 +231,7 @@ const MasterclassLanding = () => {
       {/* ===== ANNOUNCEMENT BAR ===== */}
       <div className="w-full text-center text-white text-xs sm:text-sm font-semibold py-2 px-4"
         style={{ background: `linear-gradient(90deg, ${CLAY_DARK}, ${CLAY})` }}>
-        🔥 Almost Full! Claim one of the last free seats — offer ends in {mm}:{ss}
+        🔥 Almost Full! {isFree ? 'Claim one of the last free seats' : 'Claim one of the last seats'} — offer ends in {mm}:{ss}
       </div>
 
       {/* ===== MINIMAL HEADER ===== */}
@@ -223,7 +240,7 @@ const MasterclassLanding = () => {
           <button onClick={() => navigate('/')} className="flex items-center">
             <img src={LOGO_URL} alt="UPSKALE" className="h-9 w-auto object-contain" />
           </button>
-          <CtaButton label={isPurchased ? 'My Profile' : 'Register Free'} className="px-5 py-2.5 text-sm" />
+          <CtaButton label={isPurchased ? 'My Profile' : (isFree ? 'Register Free' : 'Register Now')} className="px-5 py-2.5 text-sm" />
         </div>
       </header>
 
@@ -323,7 +340,7 @@ const MasterclassLanding = () => {
               </div>
             ))}
           </div>
-          <div className="text-center mt-10"><CtaButton label="Register Now — It's Free" className="px-8 py-4 text-lg" /></div>
+          <div className="text-center mt-10"><CtaButton label={isFree ? "Register Now — It's Free" : `Register Now — Just ₹${ticketPrice}`} className="px-8 py-4 text-lg" /></div>
         </div>
       </section>
 
@@ -482,7 +499,7 @@ const MasterclassLanding = () => {
           <div className="hidden sm:block">
             {!isPurchased ? (
               <div className="flex items-baseline gap-2">
-                <span className="text-xl font-black" style={{ color: GREEN }}>FREE</span>
+                <span className="text-xl font-black" style={{ color: GREEN }}>{priceLabel}</span>
                 <span className="text-xs font-semibold ml-2" style={{ color: CLAY }}>Seats close in {mm}:{ss}</span>
               </div>
             ) : (
@@ -491,7 +508,7 @@ const MasterclassLanding = () => {
               </span>
             )}
           </div>
-          <CtaButton label={isPurchased ? 'Go to Profile' : 'Grab Your Spot For Free'} className="flex-1 sm:flex-none px-6 py-3 text-sm sm:text-base justify-center" />
+          <CtaButton label={isPurchased ? 'Go to Profile' : (isFree ? 'Grab Your Spot For Free' : `Grab Your Spot — ₹${ticketPrice}`)} className="flex-1 sm:flex-none px-6 py-3 text-sm sm:text-base justify-center" />
         </div>
       </div>
       <div className="h-20" />

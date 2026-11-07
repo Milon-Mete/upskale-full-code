@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Bookmark, Search, Play, Video, Loader2, Lock, ArrowRight, BookOpen, Sparkles, ChevronRight } from 'lucide-react';
 import { BASE_URL } from '../config';
-import MobileBottomNav from '../components/MobileBottomNav';
 
 const MyLibraryPage = () => {
   const navigate = useNavigate();
@@ -255,7 +254,6 @@ const MyLibraryPage = () => {
         )}
 
       </div>
-      <MobileBottomNav />
     </div>
   );
 };

@@ -4,6 +4,6 @@
 
 const BASE_URL = __DEV__
   ? 'http://192.168.1.100:5000' // Local development IP
-  : 'https://api.upskale.com'; // Production backend URL
+  : 'https://api.upskale.co'; // Production backend URL
 
 export { BASE_URL };

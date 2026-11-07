@@ -264,10 +264,17 @@ const DynamicCoursePage = () => {
   }
 
   // --- HELPER FUNCTION: Format Date ---
+  // If no date is set or the stored date is in the past, roll forward to the
+  // Saturday of the week 2 weeks from now (evergreen — never shows a stale date).
   const formatLiveDate = (isoString) => {
-    if (!isoString) return "TBA"; // Fallback if no date is set
-    const date = new Date(isoString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // Returns "May 15"
+    const now = new Date();
+    let date = isoString ? new Date(isoString) : null;
+    if (!date || isNaN(date.getTime()) || date < now) {
+      date = new Date(now);
+      date.setDate(date.getDate() + 14); // 2 weeks out
+      date.setDate(date.getDate() - ((date.getDay() + 1) % 7)); // back to Saturday of that week
+    }
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); // Returns "Oct 10"
   };
 
   // --- ERROR STATE ---

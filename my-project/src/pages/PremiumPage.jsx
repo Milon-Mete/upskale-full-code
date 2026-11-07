@@ -7,7 +7,6 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { BASE_URL } from '../config';
-import MobileBottomNav from '../components/MobileBottomNav';
 
 
 const IconMap = {
@@ -425,7 +424,6 @@ const PremiumPage = () => {
                     </div>
                 )}
             </div>
-                  <MobileBottomNav />
             
 
             <style dangerouslySetInnerHTML={{ __html: `

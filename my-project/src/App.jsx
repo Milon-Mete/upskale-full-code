@@ -31,7 +31,6 @@ const BiteSizeCoursePage = lazy(() => import('./pages/Bbitsize/BiteSizeCoursePag
 const ChapterModuleBuilder = lazy(() => import('./components/ChapterModuleBuilder'));
 import ErrorBoundary from './components/ErrorBoundary'
 const PlanSelectionPage = lazy(() => import('./pages/PlanSelectionPage'));
-const BiteSizeCheckout = lazy(() => import('./pages/BiteSizeCheckout'));
 const ModernCertificateView = lazy(() => import('./components/ModernCertificateView'));
 
 const MyLibraryPage = lazy(() => import('./pages/MyLibraryPage'));
@@ -126,7 +125,7 @@ function App() {
           <Route path="/learn/:cohortId" element={<ExcelPlaylistPage />} />
           <Route path="/pro" element={<PlanSelectionPage />} />
           <Route path="/bitesize/:slug" element={<ErrorBoundary><BiteSizeCoursePage /></ErrorBoundary>} />
-          <Route path="/bitesize/checkout/:slug" element={<BiteSizeCheckout />} />
+          <Route path="/bitesize/checkout/:slug" element={<Navigate to="/pro" replace />} />
           <Route path="/admin/bitesize/:courseId/chapters" element={<ChapterModuleBuilder />} />
           <Route path="/bitesize-certificate/:id" element={<ModernCertificateView />} />
           

@@ -12,6 +12,7 @@ const Certificate = require('../models/Certificate');
 const Coupon = require('../models/Coupon');
 
 const { requireAuth, adminOnly } = require('../middleware/auth');
+const { applySubscription } = require('../utils/swipesSubscription');
 
 const engagementLimiter = require('express-rate-limit')({
     windowMs: 60 * 1000,
@@ -308,6 +309,101 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
     } catch (err) {
         console.error("Verification Error:", err);
         res.status(500).json({ message: "Verification Error" });
+    }
+});
+
+// =====================================================
+// 2a. SWIPES PRO AUTOPAY (Razorpay Subscriptions)
+// =====================================================
+//
+// One yearly plan of Rs 1299 (RAZORPAY_SWIPES_PLAN_ID). A first-time buyer gets
+// RAZORPAY_SWIPES_OFFER_ID, which takes the first year down to Rs 799. Someone
+// who has never had a trial pays Rs 1 now and the first year on day 3.
+const TRIAL_DAYS = 3;
+const TRIAL_FEE_PAISE = 100;
+const YEARLY_CYCLES = 10;
+
+router.post('/subscribe', requireAuth, async (req, res) => {
+    try {
+        const planId = process.env.RAZORPAY_SWIPES_PLAN_ID;
+        const offerId = process.env.RAZORPAY_SWIPES_OFFER_ID;
+        if (!planId || !offerId) return res.status(503).json({ message: "Swipes Pro is not available right now." });
+
+        const user = await User.findById(req.user._id).select('biteSizeSubscription').lean();
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const sub = user.biteSizeSubscription || {};
+        if (sub.status === 'active' && sub.expiresAt && new Date(sub.expiresAt) > new Date()) {
+            return res.status(400).json({ message: "You already have Swipes Pro." });
+        }
+
+        const isTrial = !sub.trialUsed;
+        const options = {
+            plan_id: planId,
+            total_count: YEARLY_CYCLES,
+            quantity: 1,
+            customer_notify: 1,
+            notes: { product: 'swipes', userId: user._id.toString(), trial: String(isTrial) }
+        };
+        if (!sub.introUsed) options.offer_id = offerId;
+        if (isTrial) {
+            options.start_at = Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60;
+            options.addons = [{ item: { name: 'Swipes Pro 3-day trial', amount: TRIAL_FEE_PAISE, currency: 'INR' } }];
+        }
+
+        const subscription = await razorpay.subscriptions.create(options);
+
+        await User.updateOne(
+            { _id: user._id },
+            { $set: { 'biteSizeSubscription.razorpaySubscriptionId': subscription.id } }
+        );
+
+        res.json({ success: true, key_id: process.env.RAZORPAY_KEY_ID, subscription_id: subscription.id, isTrial });
+    } catch (err) {
+        console.error("Subscribe Failed:", err);
+        res.status(500).json({ message: "Could not start autopay. Please try again." });
+    }
+});
+
+router.post('/subscribe/verify', requireAuth, async (req, res) => {
+    try {
+        const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = req.body;
+        const expected = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
+            .update(`${razorpay_payment_id}|${razorpay_subscription_id}`)
+            .digest('hex');
+        if (expected !== razorpay_signature) return res.status(400).json({ success: false, message: "Invalid payment signature." });
+
+        const subscription = await razorpay.subscriptions.fetch(razorpay_subscription_id);
+        if (subscription.notes?.userId !== req.user._id.toString()) return res.status(403).json({ message: "Forbidden" });
+
+        await applySubscription(subscription);
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Subscribe Verify Error:", err);
+        res.status(500).json({ message: "Could not confirm autopay. If you were charged, access will appear shortly." });
+    }
+});
+
+router.post('/subscribe/cancel', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id).select('biteSizeSubscription').lean();
+        const subscriptionId = user?.biteSizeSubscription?.razorpaySubscriptionId;
+        if (!subscriptionId) return res.status(404).json({ message: "No autopay found on this account." });
+
+        // During a trial there is no cycle to finish, so it stops at once. After
+        // that it stops at the end of the paid year. Access runs to its existing date.
+        const current = await razorpay.subscriptions.fetch(subscriptionId);
+        await razorpay.subscriptions.cancel(subscriptionId, current.status === 'active');
+
+        await User.updateOne(
+            { _id: user._id },
+            { $set: { 'biteSizeSubscription.autopayStatus': 'off', 'biteSizeSubscription.nextChargeAt': null } }
+        );
+
+        res.json({ success: true, message: "Autopay cancelled. You won't be charged again." });
+    } catch (err) {
+        console.error("Subscribe Cancel Error:", err);
+        res.status(500).json({ message: "Could not cancel autopay. Please try again." });
     }
 });
 

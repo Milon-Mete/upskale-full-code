@@ -42,7 +42,7 @@ const MobileBottomNav = () => {
     const isBiteSizeFullView = currentPath.includes('/bitesize/') && !currentPath.includes('/checkout');
     const isAdminView = currentPath.startsWith('/admin') || currentPath.startsWith('/god');
     const isMasterclassCheckout = currentPath.startsWith('/masterclasscart');
-    const isFestiveOffer = currentPath.startsWith('/festive-offer');
+    const isFestiveOffer = currentPath.startsWith('/festive-offer') || currentPath.startsWith('/pro');
 
     if (isBiteSizeFullView || isAdminView || isMasterclassCheckout || isFestiveOffer) {
         return null;

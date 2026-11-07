@@ -58,7 +58,12 @@ const userSchema = new mongoose.Schema({
     status: { type: String, enum: ['inactive', 'active'], default: 'inactive' },
     planType: { type: String, enum: ['none', 'trial', 'monthly', 'yearly'], default: 'none' },
     expiresAt: { type: Date, default: null },
-    trialUsed: { type: Boolean, default: false }
+    trialUsed: { type: Boolean, default: false },
+    // Razorpay autopay. introUsed is set once the first-year offer has been charged.
+    introUsed: { type: Boolean, default: false },
+    razorpaySubscriptionId: { type: String, default: null },
+    autopayStatus: { type: String, enum: ['none', 'on', 'failed', 'off'], default: 'none' },
+    nextChargeAt: { type: Date, default: null }
   },
 
 // ... (keep the rest of your schema)

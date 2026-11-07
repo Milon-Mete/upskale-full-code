@@ -8,6 +8,7 @@ const Coupon = require('../models/Coupon');
 const Cohort = require('../models/Cohort');
 const Masterclass = require('../models/Masterclass');
 const BiteSizeCourse = require('../models/BiteSizeCourse');
+const { applySubscription } = require('../utils/swipesSubscription');
 
 // =====================================================
 // ⚡ RAZORPAY WEBHOOK — THE SINGLE SOURCE OF TRUTH
@@ -98,6 +99,15 @@ router.post(
                     break;
                 case 'payment.failed':
                     await handlePaymentFailed(event.payload);
+                    break;
+                case 'subscription.authenticated':
+                case 'subscription.activated':
+                case 'subscription.charged':
+                case 'subscription.pending':
+                case 'subscription.halted':
+                case 'subscription.cancelled':
+                case 'subscription.completed':
+                    await applySubscription(event.payload.subscription?.entity);
                     break;
             }
             // Only send 200 if processing succeeded

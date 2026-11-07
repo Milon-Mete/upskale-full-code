@@ -122,7 +122,7 @@ const PremiumPage = () => {
             planName = "Monthly Plan";
         } else if (activePlan.planType === 'yearly') {
             validFrom.setDate(validFrom.getDate() - 365);
-            displayPrice = "599.00";
+            displayPrice = "799.00";
             planName = "Yearly Plan";
         }
     }
@@ -380,12 +380,12 @@ const PremiumPage = () => {
                                                         
                                                         <div className="flex items-center gap-1.5">
                                                             <div className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 rounded-md px-2 py-1.5 backdrop-blur-sm">
-                                                                <span className="text-[9px] text-gray-400 font-bold uppercase">Monthly</span>
-                                                                <span className="text-white font-bold text-xs">₹99</span>
+                                                                <span className="text-[9px] text-gray-400 font-bold uppercase">First year</span>
+                                                                <span className="text-white font-bold text-xs">₹799</span>
                                                             </div>
                                                             <div className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 rounded-md px-2 py-1.5 backdrop-blur-sm">
-                                                                <span className="text-[9px] text-gray-400 font-bold uppercase">Yearly</span>
-                                                                <span className="text-white font-bold text-xs">₹599</span>
+                                                                <span className="text-[9px] text-gray-400 font-bold uppercase">Then / year</span>
+                                                                <span className="text-white font-bold text-xs">₹1,299</span>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -26,7 +26,7 @@ const ComboStrip = () => (
           Learn a new skill every week. Start at just ₹1.
         </h3>
         <p className="text-sm text-gray-400 mt-1.5">
-          3-day trial for ₹1 · Monthly ₹99 · Yearly ₹599. Certificates included. Cancel anytime.
+          ₹1 for 3 days, then ₹799 for the first year and ₹1,299/year after, on autopay. Certificates included. Cancel anytime.
         </p>
       </div>
       <Link

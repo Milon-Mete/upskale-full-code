@@ -1,476 +1,294 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Award, ShieldCheck, ArrowRight, ChevronLeft, Lock, Star, Check, ChevronUp, ChevronDown, Loader2 } from 'lucide-react';
-import { BASE_URL } from '../config'; 
-import LoginModal from '../components/LoginModal'; 
+import { Award, ArrowRight, BookOpen, Check, ChevronLeft, CircleCheck, Loader2, Play, ShieldCheck, Smartphone, Sparkles } from 'lucide-react';
+import { BASE_URL } from '../config';
+import LoginModal from '../components/LoginModal';
+import '../swipes.css';
+
+const INTRO_PRICE = 799;
+const RENEWAL_PRICE = 1299;
+const TRIAL_DAYS = 3;
+
+const BENEFITS = [
+    { icon: Smartphone, title: 'Made for your phone', text: 'Short lessons you swipe through, anywhere.' },
+    { icon: BookOpen, title: 'Every Swipes course', text: 'One plan unlocks all of them for the whole year.' },
+    { icon: Award, title: 'Certificates included', text: 'Finish a course and earn a verifiable certificate.' }
+];
+
+const STEPS = [
+    { icon: Play, label: 'Watch', tint: 'from-amber-400 to-orange-600' },
+    { icon: Sparkles, label: 'Practise', tint: 'from-emerald-400 to-teal-700' },
+    { icon: Award, label: 'Get certified', tint: 'from-fuchsia-500 to-indigo-700' }
+];
+
+const formatDate = (date) => new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+const rupees = (amount) => `₹${amount.toLocaleString('en-IN')}`;
+
+const authHeaders = () => {
+    const token = localStorage.getItem('token');
+    return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+};
+
+const PhoneDeck = () => (
+    <div className="swipe-phone" aria-hidden="true">
+        <div className="swipe-screen">
+            {STEPS.map(({ icon: Icon, label, tint }, index) => (
+                <div key={label} className={`swipe-slide bg-gradient-to-br ${tint}`} style={{ '--slide': index }}>
+                    <Icon size={44} />
+                    <span>{label}</span>
+                </div>
+            ))}
+            <div className="swipe-progress"><i /></div>
+        </div>
+        <div className="swipe-finger" />
+    </div>
+);
 
 const PlanSelectionPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    
-    // Return path logic
     const returnPath = location.state?.returnTo || '/';
 
-    const [selectedPlan, setSelectedPlan] = useState('monthly');
-    const [openFaq, setOpenFaq] = useState(null);
-    const previewLocked = true;
-
-    // Coupon state
-    const [couponCode, setCouponCode] = useState('');
-    const [appliedCoupon, setAppliedCoupon] = useState(null);
-    const [couponMsg, setCouponMsg] = useState(null);
-
-    // 🔴 AUTH STATE 
     const [currentUser, setCurrentUser] = useState(() => JSON.parse(localStorage.getItem('user') || 'null'));
     const [showLoginModal, setShowLoginModal] = useState(false);
-    const [processingPayment, setProcessingPayment] = useState(false);
+    const [processing, setProcessing] = useState(false);
+    const [confirmCancel, setConfirmCancel] = useState(false);
+    const [message, setMessage] = useState('');
 
     useEffect(() => {
-        const syncUser = () => {
-            const stored = localStorage.getItem('user');
-            if (stored) {
-                setCurrentUser(JSON.parse(stored));
-            }
-        };
-        syncUser();
-        window.addEventListener('storage', syncUser);
-        return () => window.removeEventListener('storage', syncUser);
+        const script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        document.body.appendChild(script);
     }, []);
 
-    const features = [
-        { name: "Unlimited Module Access", free: true, pro: true },
-        { name: "Community Access", free: true, pro: true },
-        { name: "Premium Certifications", free: false, pro: true },
-        { name: "Downloadable Resources", free: false, pro: true },
-    ];
-    
-    const faqs = [
-        { q: "How does the PRO plan help me get hired?", a: "PRO gives you direct access to our hiring partners, resume reviews, and mock interviews that free users do not get." },
-        { q: "In which languages is the platform available?", a: "Our platform currently supports English, Hindi, and Bengali to help you navigate and manage your account in your preferred language." }
-    ];
+    const refreshUser = async () => {
+        if (!currentUser?._id) return;
+        try {
+            const res = await fetch(`${BASE_URL}/user/${currentUser._id}`, { headers: authHeaders(), credentials: 'include' });
+            if (!res.ok) return;
+            const fresh = await res.json();
+            localStorage.setItem('user', JSON.stringify(fresh));
+            setCurrentUser(fresh);
+        } catch (err) {
+            console.error('Could not refresh the user', err);
+        }
+    };
 
-    useEffect(() => {
-        const loadRazorpay = () => {
-            return new Promise((resolve) => {
-                const script = document.createElement("script");
-                script.src = "https://checkout.razorpay.com/v1/checkout.js";
-                script.onload = () => resolve(true);
-                script.onerror = () => resolve(false);
-                document.body.appendChild(script);
-            });
-        };
-        loadRazorpay();
-    }, []);
-
-    // --- SUBSCRIPTION STATUS CALCULATION ---
     const subscription = currentUser?.biteSizeSubscription;
     const isActive = subscription?.status === 'active' && subscription?.expiresAt && new Date(subscription.expiresAt) > new Date();
+    const autopayOn = subscription?.autopayStatus === 'on';
+    const getsTrial = !subscription?.trialUsed;
+    const getsIntro = !subscription?.introUsed;
+    const yearPrice = getsIntro ? INTRO_PRICE : RENEWAL_PRICE;
+    const chargeDate = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
+    const buyLabel = getsTrial ? 'Start for ₹1' : `Pay ${rupees(yearPrice)}`;
 
-    let daysLeft = 0;
-    if (isActive) {
-        const diffTime = new Date(subscription.expiresAt).getTime() - new Date().getTime();
-        daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    }
-
-    const handleProceedToPayment = async () => {
+    const handleSubscribe = async () => {
         if (!currentUser) {
             setShowLoginModal(true);
             return;
         }
-
-        // The API accepts a cookie OR a Bearer <redacted> The cookie is cross-site
-        // (upskale.co → api.upskale.co) and browsers that block third-party cookies
-        // drop it, so the token is sent explicitly the way the rest of the app does.
-        const authHeaders = () => {
-            const token = localStorage.getItem('token');
-            return {
-                'Content-Type': 'application/json',
-                ...(token ? { Authorization: `Bearer ${token}` } : {})
-            };
-        };
-
-        setProcessingPayment(true);
+        setProcessing(true);
+        setMessage('');
         try {
-            const initRes = await fetch(`${BASE_URL}/bitesize-courses/create-checkout`, {
-                method: 'POST',
-                headers: authHeaders(),
-                credentials: 'include',
-                body: JSON.stringify({ planType: selectedPlan, couponCode: appliedCoupon ? couponCode.trim() : undefined })
+            const initRes = await fetch(`${BASE_URL}/bitesize-courses/subscribe`, {
+                method: 'POST', headers: authHeaders(), credentials: 'include'
             });
+            const init = await initRes.json();
 
-            const initData = await initRes.json();
-
-            // CATCH EXPIRED SESSIONS
             if (initRes.status === 401 || initRes.status === 403) {
                 localStorage.removeItem('user');
                 setCurrentUser(null);
                 setShowLoginModal(true);
-                setProcessingPayment(false);
+                setProcessing(false);
                 return;
             }
-
             if (!initRes.ok) {
-                alert(initData.message || "Failed to initialize payment.");
-                setProcessingPayment(false);
+                setMessage(init.message || 'Could not start autopay.');
+                setProcessing(false);
                 return;
             }
 
-            // FREE ACTIVATION via coupon — no Razorpay, subscription already active
-            if (initData.success && initData.isFree) {
-                try {
-                    const freshUserRes = await fetch(`${BASE_URL}/user/${currentUser._id}`, {
-                        method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
-                        credentials: 'include'
-                    });
-                    if (freshUserRes.ok) {
-                        const freshUser = await freshUserRes.json();
-                        localStorage.setItem('user', JSON.stringify(freshUser));
-                        setCurrentUser(freshUser);
-                    }
-                } catch (e) { console.error("Could not fetch fresh user data", e); }
-                alert("Coupon applied! Welcome to PRO.");
-                navigate(returnPath, { replace: true });
-                return;
-            }
-
-            const options = {
-                key: initData.key_id,
-                amount: initData.amount * 100, 
-                currency: "INR",
-                name: "UPSKALE PRO",
-                description: initData.description,
-                order_id: initData.order_id,
-                prefill: {
-                    name: currentUser.name,
-                    email: currentUser.email,
-                    contact: currentUser.phone
-                },
-                handler: async function (response) {
+            const rzp = new window.Razorpay({
+                key: init.key_id,
+                subscription_id: init.subscription_id,
+                name: 'UPSKALE Swipes Pro',
+                description: init.isTrial ? `₹1 trial, then ${rupees(yearPrice)} autopay` : `${rupees(yearPrice)} for the year, on autopay`,
+                prefill: { name: currentUser.name, email: currentUser.email, contact: currentUser.phone },
+                theme: { color: '#eab308' },
+                modal: { ondismiss: () => setProcessing(false) },
+                handler: async (response) => {
                     try {
-                        const verifyRes = await fetch(`${BASE_URL}/bitesize-courses/verify-payment`, {
-                            method: 'POST',
-                            headers: authHeaders(),
-                            credentials: 'include',
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature
-                            })
+                        await fetch(`${BASE_URL}/bitesize-courses/subscribe/verify`, {
+                            method: 'POST', headers: authHeaders(), credentials: 'include', body: JSON.stringify(response)
                         });
-
-                        const verifyData = await verifyRes.json();
-
-                        if (verifyRes.ok) {
-                            // 🔴 CRITICAL FIX: Fetch fresh user profile from DB to get the exact expiresAt date
-                            try {
-                                const freshUserRes = await fetch(`${BASE_URL}/user/${currentUser._id}`, {
-                                    method: 'GET',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    credentials: 'include'
-                                });
-                                if (freshUserRes.ok) {
-                                    const freshUser = await freshUserRes.json();
-                                    localStorage.setItem('user', JSON.stringify(freshUser));
-                                    setCurrentUser(freshUser); // Updates state immediately so UI changes
-                                }
-                            } catch (e) {
-                                console.error("Could not fetch fresh user data", e);
-                            }
-
-                            alert("Payment Successful! Welcome to PRO.");
-                            navigate(returnPath, { replace: true }); 
-                        } else {
-                            alert(verifyData.message || "Payment verification failed.");
-                        }
                     } catch (err) {
-                        alert("Error verifying payment. Please contact support.");
+                        console.error('Verify did not reach the server, the webhook will finish it', err);
                     }
-                },
-                theme: { color: "#eab308" }
-            };
-
-            const rzp = new window.Razorpay(options);
-            rzp.on('payment.failed', function (response) {
-                alert("Payment failed. " + response.error.description);
+                    await refreshUser();
+                    setProcessing(false);
+                    navigate(returnPath, { replace: true });
+                }
+            });
+            rzp.on('payment.failed', (response) => {
+                setMessage(`Payment failed. ${response.error.description}`);
+                setProcessing(false);
             });
             rzp.open();
-
         } catch (err) {
-            console.error("Checkout error:", err);
-            alert("Connection error. Could not start checkout.");
+            console.error('Subscribe error', err);
+            setMessage('Connection error. Please try again.');
+            setProcessing(false);
+        }
+    };
+
+    const handleCancel = async () => {
+        setProcessing(true);
+        try {
+            const res = await fetch(`${BASE_URL}/bitesize-courses/subscribe/cancel`, {
+                method: 'POST', headers: authHeaders(), credentials: 'include'
+            });
+            const data = await res.json();
+            setMessage(data.message);
+            if (res.ok) await refreshUser();
+        } catch {
+            setMessage('Connection error. Please try again.');
         } finally {
-            setProcessingPayment(false);
+            setConfirmCancel(false);
+            setProcessing(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans pb-40 lg:pb-16 selection:bg-yellow-500/30">
-
-            {/* LOGIN MODAL */}
+        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans pb-44 lg:pb-16 overflow-x-clip selection:bg-yellow-500/30">
             {showLoginModal && (
-                <LoginModal 
-                    onClose={() => setShowLoginModal(false)} 
+                <LoginModal
+                    onClose={() => setShowLoginModal(false)}
                     onSuccess={(user) => {
                         setCurrentUser(user);
                         setShowLoginModal(false);
-                    }} 
+                    }}
                 />
             )}
 
-            {/* VIDEO HEADER */}
-            <div className="w-full h-[45vh] lg:h-[70vh] md:relative sticky bg-black top-0 z-0 overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 lg:via-[#0a0a0a]/40 to-transparent pointer-events-none" />
-                
-                <button onClick={() => navigate(returnPath === '/' ? -1 : returnPath)} className="absolute top-6 left-4 lg:left-8 p-2 lg:p-3 bg-black/40 backdrop-blur-md rounded-full text-white z-30 hover:bg-black/60 transition-colors">
-                    <ChevronLeft size={24} />
-                </button>
-
-                {previewLocked && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center z-20 text-center animate-fade-in-up">
-                        <div className="w-16 h-16 bg-[#eab308]/20 rounded-full flex items-center justify-center mb-3 border border-[#eab308]/30">
-                            <Lock size={32} className="text-[#eab308]" />
-                        </div>
-                        <h3 className="text-2xl lg:text-4xl font-black text-white drop-shadow-lg">UPSKALE PRO</h3>
-                        <p className="text-gray-300 text-sm lg:text-lg mt-2 drop-shadow-md">Unlock PRO to access all modules instantly.</p>
-                    </div>
-                )}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="swipe-glow absolute top-[-15%] left-1/2 w-[620px] h-[620px] bg-yellow-500 opacity-[0.1] blur-[140px] rounded-full" />
             </div>
 
-            <div className="max-w-7xl mx-auto lg:px-8 relative z-10 -mt-6 lg:-mt-32">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+            <button
+                onClick={() => navigate(returnPath === '/' ? -1 : returnPath)}
+                aria-label="Go back"
+                className="absolute top-5 left-4 lg:left-10 z-20 p-2 bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-colors"
+            >
+                <ChevronLeft size={24} />
+            </button>
 
-                    {/* LEFT COLUMN: STORY & FEATURES */}
-                    <div className="lg:col-span-8 bg-[#0a0a0a] px-4 lg:bg-transparent rounded-t-3xl pt-8 lg:pt-0 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] lg:shadow-none">
-                        <div className="text-center lg:text-left mb-10">
-                            <div className="group inline-flex items-center gap-2 mb-2 lg:mb-4 bg-black/40 lg:backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
-                                <img src="https://res.cloudinary.com/dvcs9x8yp/image/upload/v1775412223/20250730_170449_0000_uq4d24.png" alt="UPSKALE Logo" className="h-8 md:h-12 w-auto object-contain transition-transform duration-500 group-hover:scale-105 drop-shadow-[0_0_15px_rgba(0,138,69,0.3)]" />
-                            </div>
-                            <h1 className="text-3xl lg:text-6xl font-black mt-2 leading-tight lg:drop-shadow-2xl">Unlock 10x career growth now</h1>
-                        </div>
+            <main className="relative z-10 max-w-6xl mx-auto px-4 md:px-6 pt-20 lg:pt-24 lg:grid lg:grid-cols-2 lg:gap-16 lg:items-center">
+                <section className="text-center lg:text-left">
+                    <p className="swipe-rise inline-flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-yellow-400 mb-4">
+                        <Sparkles size={14} /> Swipes Pro
+                    </p>
+                    <h1 className="swipe-rise text-4xl md:text-6xl font-black tracking-tight leading-[1.05]" style={{ '--delay': '80ms' }}>
+                        Fewer reels.<br />
+                        <span className="swipe-shimmer">More skills.</span>
+                    </h1>
+                    <p className="swipe-rise text-gray-400 text-lg mt-4 max-w-md mx-auto lg:mx-0" style={{ '--delay': '160ms' }}>
+                        Short lessons built for your phone, with a certificate at the end.
+                    </p>
+                    <div className="swipe-rise my-8 lg:hidden" style={{ '--delay': '220ms' }}><PhoneDeck /></div>
 
-                        {/* Before / After Graphic */}
-                        <div className="mb-12">
-                            <div className="bg-[#121212] lg:bg-black/60 lg:backdrop-blur-md border border-white/5 lg:border-white/10 rounded-3xl overflow-hidden relative group shadow-2xl">
-                                <div className="w-full relative bg-black flex items-center justify-center overflow-hidden">
-                                    <img src="https://res.cloudinary.com/dv5ysdbps/image/upload/f_auto,q_auto/v1775649763/rqjvidu8zmlyxnjfmcro.webp" alt="Pro Benefits" className="w-full h-auto block opacity-80 group-hover:opacity-100 group-hover:scale-[1.01] transition-all duration-700 ease-out" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none"></div>
-                                </div>
-                                <div className="p-6 lg:p-8 text-center border-t border-white/5 bg-[#0d0d0d]">
-                                    <p className="font-black text-xl lg:text-3xl text-white tracking-tight">PRO users get hired <span className="text-emerald-500">3x faster.</span></p>
-                                    <p className="text-gray-500 text-[10px] lg:text-xs mt-2 uppercase tracking-widest font-bold">Global Industry Report • 2026</p>
-                                </div>
-                            </div>
-                        </div>
+                    <ul className="mt-8 space-y-3 max-w-md mx-auto lg:mx-0 text-left">
+                        {BENEFITS.map(({ icon: Icon, title, text }, index) => (
+                            <li key={title} className="swipe-rise flex items-center gap-4 bg-white/[0.04] border border-white/10 rounded-2xl p-4" style={{ '--delay': `${280 + index * 90}ms` }}>
+                                <span className="w-11 h-11 shrink-0 rounded-xl bg-yellow-500/15 text-yellow-400 flex items-center justify-center"><Icon size={22} /></span>
+                                <span>
+                                    <span className="block font-bold">{title}</span>
+                                    <span className="block text-sm text-gray-400">{text}</span>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                </section>
 
-                        {/* Comparison Table */}
-                        <div className="mb-12">
-                            <h2 className="text-xl lg:text-3xl font-bold mb-6 text-center lg:text-left">Unlock deeper learning</h2>
-                            <div className="bg-[#121212] lg:bg-black/60 lg:backdrop-blur-md border border-white/5 lg:border-white/10 rounded-3xl overflow-hidden">
-                                <div className="grid grid-cols-12 py-4 lg:py-6 px-4 lg:px-8 border-b border-white/5 items-center">
-                                    <div className="col-span-7 text-xs lg:text-sm font-bold text-gray-500 uppercase tracking-wider">What you get</div>
-                                    <div className="col-span-2 text-center text-xs lg:text-sm font-bold text-gray-500">Free</div>
-                                    <div className="col-span-3 text-center">
-                                        <span className="bg-[#eab308] text-black text-[10px] lg:text-xs font-black uppercase px-3 lg:px-4 py-1 lg:py-1.5 rounded-full">Pro</span>
+                <section className="mt-8 lg:mt-0">
+                    <div className="hidden lg:block mb-8"><PhoneDeck /></div>
+
+                    <div className="swipe-rise swipe-card max-w-md mx-auto" style={{ '--delay': '420ms' }}>
+                        {isActive ? (
+                            <div className="text-center">
+                                <CircleCheck size={40} className="text-[#00d26a] mx-auto mb-3" />
+                                <h2 className="text-2xl font-black">You're on Swipes Pro</h2>
+                                <p className="text-gray-400 text-sm mt-2">Access until {formatDate(subscription.expiresAt)}</p>
+                                {autopayOn && subscription.nextChargeAt && (
+                                    <p className="text-gray-300 text-sm mt-3">Autopay is on. Next charge on {formatDate(subscription.nextChargeAt)}.</p>
+                                )}
+                                <button onClick={() => navigate('/premium')} className="w-full mt-5 py-3.5 rounded-xl bg-white text-black font-black active:scale-95 transition-transform">
+                                    Start learning
+                                </button>
+                                {autopayOn && (confirmCancel ? (
+                                    <div className="mt-4 text-sm">
+                                        <p className="text-gray-300 mb-3">Cancel autopay? You keep access until the date above.</p>
+                                        <div className="flex gap-2">
+                                            <button onClick={handleCancel} disabled={processing} className="flex-1 py-3 rounded-xl border border-red-500/50 text-red-400 font-bold">
+                                                {processing ? 'Cancelling…' : 'Yes, cancel'}
+                                            </button>
+                                            <button onClick={() => setConfirmCancel(false)} className="flex-1 py-3 rounded-xl border border-white/15 font-bold">Keep it</button>
+                                        </div>
                                     </div>
-                                </div>
-                                {features.map((feat, idx) => (
-                                    <div key={idx} className="grid grid-cols-12 py-4 lg:py-5 px-4 lg:px-8 border-b border-white/5 last:border-0 items-center hover:bg-white/[0.02] transition-colors">
-                                        <div className="col-span-7 text-sm lg:text-base font-medium text-gray-300">{feat.name}</div>
-                                        <div className="col-span-2 flex justify-center">{feat.free ? <Check size={18} className="text-[#eab308]" /> : <Lock size={16} className="text-gray-600" />}</div>
-                                        <div className="col-span-3 flex justify-center bg-white/[0.02] py-2 rounded-lg">{feat.pro ? <Check size={18} className="text-[#eab308]" /> : <Lock size={16} className="text-gray-600" />}</div>
-                                    </div>
+                                ) : (
+                                    <button onClick={() => setConfirmCancel(true)} className="mt-4 text-sm text-gray-400 underline">Cancel autopay</button>
                                 ))}
                             </div>
-                        </div>
+                        ) : (
+                            <>
+                                <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
+                                    {getsTrial ? 'New member offer' : getsIntro ? 'First year offer applied' : 'Swipes Pro yearly'}
+                                </p>
+                                <div className="flex items-end gap-2 mt-2">
+                                    <span className="swipe-pop text-6xl font-black leading-none">{getsTrial ? '₹1' : rupees(yearPrice)}</span>
+                                    <span className="text-gray-400 font-semibold mb-1">{getsTrial ? `for ${TRIAL_DAYS} days` : 'for the year'}</span>
+                                </div>
 
-                        {/* FAQs */}
-                        <div className="mb-12 lg:mb-24">
-                            <h2 className="text-xl lg:text-3xl font-bold mb-6 text-center lg:text-left">FAQs</h2>
-                            <div className="space-y-3 lg:space-y-4">
-                                {faqs.map((faq, idx) => (
-                                    <div key={idx} className="bg-[#121212] lg:bg-black/60 lg:backdrop-blur-md border border-white/5 lg:border-white/10 rounded-2xl overflow-hidden transition-all hover:border-white/20">
-                                        <button onClick={() => setOpenFaq(openFaq === idx ? null : idx)} className="w-full p-5 lg:p-6 flex items-center justify-between text-left">
-                                            <span className="font-bold text-sm lg:text-base text-gray-200 pr-4">{faq.q}</span>
-                                            {openFaq === idx ? <ChevronUp size={20} className="text-gray-500 shrink-0" /> : <ChevronDown size={20} className="text-gray-500 shrink-0" />}
-                                        </button>
-                                        <div className={`px-5 lg:px-6 text-sm lg:text-base text-gray-400 leading-relaxed overflow-hidden transition-all duration-300 ${openFaq === idx ? 'max-h-40 pb-5 lg:pb-6 opacity-100' : 'max-h-0 opacity-0'}`}>{faq.a}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                                <ol className="mt-5 space-y-2.5 text-sm">
+                                    {getsTrial && (
+                                        <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Today:</b> ₹1 and full access for {TRIAL_DAYS} days</span></li>
+                                    )}
+                                    <li className="flex gap-2.5">
+                                        <Check size={18} className="text-[#00d26a] shrink-0" />
+                                        <span>
+                                            <b>{getsTrial ? formatDate(chargeDate) : 'Today'}:</b> {rupees(yearPrice)} for the {getsIntro ? 'first ' : ''}year
+                                            {getsIntro && <span className="text-gray-500"> <s>{rupees(RENEWAL_PRICE)}</s></span>}
+                                        </span>
+                                    </li>
+                                    <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Every year after:</b> {rupees(RENEWAL_PRICE)}</span></li>
+                                </ol>
+
+                                <button onClick={handleSubscribe} disabled={processing} className="hidden lg:flex swipe-cta w-full mt-6 py-4 rounded-xl text-black font-black text-lg items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
+                                    {processing ? <Loader2 size={20} className="animate-spin" /> : <>{buyLabel} <ArrowRight size={20} /></>}
+                                </button>
+
+                                <p className="text-xs text-gray-400 leading-relaxed mt-4">
+                                    Autopay renews automatically until you cancel.
+                                    {getsTrial ? ` Cancel before ${formatDate(chargeDate)} and you won't be charged the yearly amount.` : ''} Cancel anytime from this page.
+                                </p>
+                                <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5"><ShieldCheck size={14} className="text-[#008a45] shrink-0" /> Secure autopay by Razorpay</p>
+                            </>
+                        )}
+                        {message && <p className="text-sm text-yellow-300 mt-3 text-center">{message}</p>}
                     </div>
+                </section>
+            </main>
 
-                    {/* RIGHT COLUMN: STICKY CHECKOUT CARD (DESKTOP) */}
-                    <div className="hidden lg:block lg:col-span-4">
-                        <div className="sticky top-24 bg-[#121212]/90 backdrop-blur-2xl border border-white/10 rounded-[2rem] p-8 shadow-2xl">
-                            
-                            {isActive ? (
-                                // 🟢 ACTIVE USER DASHBOARD UI
-                                <div className="text-center animate-fade-in-up">
-                                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-emerald-600 rounded-3xl mx-auto flex items-center justify-center mb-5 shadow-xl shadow-emerald-500/20">
-                                        <ShieldCheck className="text-white" size={40} />
-                                    </div>
-                                    <h3 className="text-2xl font-black text-white">PRO Active</h3>
-                                    <p className="text-gray-400 text-sm mt-2 mb-6">
-                                        You are currently on the <span className="uppercase font-bold text-emerald-400">{subscription.planType}</span> plan.
-                                    </p>
-                                    
-                                    <div className="bg-black/40 border border-emerald-500/20 rounded-2xl p-6 mb-8 relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-emerald-500/5 blur-xl pointer-events-none"></div>
-                                        <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-2 relative z-10">Time Remaining</p>
-                                        <div className="flex items-baseline justify-center gap-1 relative z-10">
-                                            <span className="text-5xl font-black text-white">{daysLeft}</span> 
-                                            <span className="text-lg text-gray-400 font-medium">days</span>
-                                        </div>
-                                    </div>
-
-                                    <button 
-                                        onClick={() => navigate('/')} 
-                                        className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-black py-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg active:scale-95"
-                                    >
-                                        Return to Dashboard <ArrowRight size={20} />
-                                    </button>
-                                </div>
-                            ) : (
-                                // 🟡 NON-ACTIVE USER PRICING UI
-                                <>
-                                    <div className="text-center mb-8">
-                                        <div className="w-16 h-16 bg-gradient-to-br from-[#eab308] to-yellow-600 rounded-2xl mx-auto flex items-center justify-center mb-4 shadow-lg shadow-[#eab308]/20"><Award className="text-black" size={32} /></div>
-                                        <h3 className="text-2xl font-black text-white">Choose your plan</h3>
-                                        <p className="text-gray-400 text-sm mt-2">Get instant access to all premium modules and mentorship.</p>
-                                    </div>
-
-                                    <div className="space-y-4 mb-8">
-                                        <div onClick={() => setSelectedPlan('yearly')} className={`rounded-2xl p-5 cursor-pointer relative border-2 transition-all duration-300 ${selectedPlan === 'yearly' ? 'border-[#eab308] bg-[#eab308]/5 transform scale-105 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
-                                            <div className="absolute top-4 right-4"><div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPlan === 'yearly' ? 'border-[#eab308]' : 'border-gray-600'}`}>{selectedPlan === 'yearly' && <div className="w-2.5 h-2.5 bg-[#eab308] rounded-full"></div>}</div></div>
-                                            <div className="inline-block bg-[#eab308] text-black text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-sm mb-3">Best Value</div>
-                                            <div className="text-sm text-gray-300 font-bold mb-1">Full Access</div>
-                                            <div className="flex items-baseline gap-1"><span className="text-3xl font-black text-white">₹599</span><span className="text-xs text-gray-500 font-medium">/year</span></div>
-                                        </div>
-                                        <div onClick={() => setSelectedPlan('monthly')} className={`rounded-2xl p-5 cursor-pointer relative border-2 transition-all duration-300 ${selectedPlan === 'monthly' ? 'border-[#eab308] bg-[#eab308]/5 transform scale-105 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
-                                            <div className="absolute top-4 right-4"><div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPlan === 'monthly' ? 'border-[#eab308]' : 'border-gray-600'}`}>{selectedPlan === 'monthly' && <div className="w-2.5 h-2.5 bg-[#eab308] rounded-full"></div>}</div></div>
-                                            <div className="inline-block border border-[#eab308]/50 text-[#eab308] text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-sm mb-3">Most Popular</div>
-                                            <div className="text-sm text-gray-300 font-bold mb-1">Monthly Pass</div>
-                                            <div className="flex items-baseline gap-1"><span className="text-3xl font-black text-white">₹99</span><span className="text-xs text-gray-500 font-medium">/month</span></div>
-                                        </div>
-                                        <div onClick={() => setSelectedPlan('trial')} className={`rounded-2xl p-5 cursor-pointer relative border-2 transition-all duration-300 ${selectedPlan === 'trial' ? 'border-[#eab308] bg-[#eab308]/5 transform scale-105 shadow-[0_0_20px_rgba(234,179,8,0.15)]' : 'border-white/10 bg-black/40 hover:border-white/20'}`}>
-                                            <div className="absolute top-4 right-4"><div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selectedPlan === 'trial' ? 'border-[#eab308]' : 'border-gray-600'}`}>{selectedPlan === 'trial' && <div className="w-2.5 h-2.5 bg-[#eab308] rounded-full"></div>}</div></div>
-                                            <div className="text-sm text-gray-300 font-bold mb-1">Trial Access</div>
-                                            <div className="flex items-baseline gap-1"><span className="text-3xl font-black text-white">₹1</span><span className="text-xs text-gray-500 font-medium">/3 days</span></div>
-                                        </div>
-                                    </div>
-                                    
-                                    {/* COUPON */}
-                                    <div className="mb-4">
-                                        {appliedCoupon ? (
-                                            <div className="flex items-center justify-between bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3">
-                                                <span className="text-emerald-400 text-sm font-bold">✓ {appliedCoupon.code} applied</span>
-                                                <button onClick={() => { setAppliedCoupon(null); setCouponCode(''); setCouponMsg(null); }} className="text-gray-400 text-xs underline">Remove</button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        value={couponCode}
-                                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                                                        placeholder="Coupon code"
-                                                        className="flex-1 bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-500 outline-none focus:border-[#eab308]/60 uppercase"
-                                                    />
-                                                    <button
-                                                        onClick={async () => {
-                                                            if (!couponCode.trim()) return;
-                                                            setCouponMsg({ type: 'loading', text: 'Checking...' });
-                                                            try {
-                                                                const res = await fetch(`${BASE_URL}/coupons/verify`, {
-                                                                    method: 'POST',
-                                                                    headers: { 'Content-Type': 'application/json' },
-                                                                    body: JSON.stringify({ code: couponCode.trim(), orderAmount: selectedPlan === 'monthly' ? 99 : selectedPlan === 'yearly' ? 599 : 1 })
-                                                                });
-                                                                const data = await res.json();
-                                                                if (res.ok && data.success) {
-                                                                    setAppliedCoupon({ code: data.code });
-                                                                    setCouponMsg({ type: 'success', text: `Coupon applied! ₹${data.totalDiscount || 0} off.` });
-                                                                } else {
-                                                                    setCouponMsg({ type: 'error', text: data.message || 'Invalid coupon' });
-                                                                }
-                                                            } catch (e) { setCouponMsg({ type: 'error', text: 'Could not verify coupon' }); }
-                                                        }}
-                                                        className="bg-white/10 hover:bg-white/20 text-white text-sm font-bold px-5 rounded-xl transition-colors"
-                                                    >
-                                                        Apply
-                                                    </button>
-                                                </div>
-                                                {couponMsg && (
-                                                    <p className={`text-xs mt-2 ${couponMsg.type === 'error' ? 'text-red-400' : couponMsg.type === 'success' ? 'text-emerald-400' : 'text-gray-400'}`}>{couponMsg.text}</p>
-                                                )}
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <button 
-                                        onClick={handleProceedToPayment} 
-                                        disabled={processingPayment}
-                                        className="w-full bg-white text-black font-black py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors shadow-lg active:scale-95 text-lg disabled:opacity-50"
-                                    >
-                                        {processingPayment ? <Loader2 className="animate-spin" size={20} /> : <>Continue to Payment <ArrowRight size={20} /></>}
-                                    </button>
-                                    
-                                    <p className="text-center text-xs text-gray-500 mt-4 flex items-center justify-center gap-1"><ShieldCheck size={14} /> Secure 256-bit encryption</p>
-                                    <p className="text-center text-[10px] text-gray-600 mt-2">*For your security, sessions automatically require re-authentication every 7 days.</p>
-                                </>
-                            )}
-                        </div>
-                    </div>
+            {!isActive && (
+                <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d0d]/95 backdrop-blur border-t border-yellow-500/40 px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+                    <button onClick={handleSubscribe} disabled={processing} className="swipe-cta w-full py-4 rounded-xl text-black font-black text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
+                        {processing ? <Loader2 size={20} className="animate-spin" /> : <>{buyLabel} <ArrowRight size={20} /></>}
+                    </button>
+                    <p className="text-[11px] text-gray-400 text-center mt-2">
+                        {getsTrial ? `Then ${rupees(yearPrice)} on ${formatDate(chargeDate)}, ` : ''}{rupees(RENEWAL_PRICE)}/year after. Cancel anytime.
+                    </p>
                 </div>
-            </div>
-
-            {/* MOBILE STICKY BOTTOM CHECKOUT */}
-            <div className="lg:hidden fixed bottom-0 left-0 w-full bg-[#121212] border-t border-white/10 p-4 z-50 rounded-t-3xl shadow-[0_-20px_40px_rgba(0,0,0,0.8)] pb-safe">
-                <div className="max-w-md mx-auto">
-                    {isActive ? (
-                        // 🟢 ACTIVE USER MOBILE UI
-                        <div className="text-center mb-2">
-                            <p className="text-emerald-400 font-bold uppercase text-xs tracking-wider mb-1 flex justify-center items-center gap-1"><ShieldCheck size={14}/> PRO Plan Active</p>
-                            <p className="text-white font-black text-2xl mb-3">{daysLeft} <span className="text-sm text-gray-400">Days Remaining</span></p>
-                            <button 
-                                onClick={() => navigate('/')} 
-                                className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95 shadow-[0_0_20px_rgba(16,185,129,0.2)]"
-                            >
-                                Return to Dashboard
-                            </button>
-                        </div>
-                    ) : (
-                        // 🟡 NON-ACTIVE USER MOBILE UI
-                        <>
-                            <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar pt-4 pb-2">
-                                <div onClick={() => setSelectedPlan('yearly')} className={`min-w-[120px] flex-1 rounded-2xl p-4 cursor-pointer relative border-2 transition-all ${selectedPlan === 'yearly' ? 'border-[#eab308] bg-[#eab308]/5' : 'border-white/10 bg-black/40'}`}>
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-max bg-[#eab308] text-black text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded shadow-lg z-10">Best Value</div>
-                                    <div className="text-[11px] text-gray-400 font-bold mb-1 mt-1 text-center">Yearly</div>
-                                    <div className="text-xl font-black text-white leading-none mb-1 text-center">₹599</div>
-                                </div>
-                                <div onClick={() => setSelectedPlan('monthly')} className={`min-w-[120px] flex-1 rounded-2xl p-4 cursor-pointer relative border-2 transition-all ${selectedPlan === 'monthly' ? 'border-[#eab308] bg-[#eab308]/5' : 'border-white/10 bg-black/40'}`}>
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-max bg-emerald-500 text-white text-[9px] font-black uppercase tracking-tighter px-2 py-0.5 rounded shadow-lg z-10">Most Popular</div>
-                                    <div className="text-[11px] text-[#eab308] font-bold mb-1 mt-1 text-center">Monthly</div>
-                                    <div className="text-xl font-black text-white leading-none mb-1 text-center">₹99</div>
-                                </div>
-                                <div onClick={() => setSelectedPlan('trial')} className={`min-w-[100px] flex-1 rounded-2xl p-4 cursor-pointer relative border-2 transition-all ${selectedPlan === 'trial' ? 'border-[#eab308] bg-[#eab308]/5' : 'border-white/10 bg-black/40'}`}>
-                                    <div className="text-[11px] text-gray-400 font-bold mb-1 mt-1 text-center">Trial</div>
-                                    <div className="text-xl font-black text-white leading-none mb-1 text-center">₹1</div>
-                                </div>
-                            </div>
-                            
-                            <button 
-                                onClick={handleProceedToPayment} 
-                                disabled={processingPayment}
-                                className="w-full bg-white text-black font-bold py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 transition-colors active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.2)] disabled:opacity-50"
-                            >
-                                {processingPayment ? <Loader2 className="animate-spin" size={20} /> : "Continue to Payment"}
-                            </button>
-                        </>
-                    )}
-                </div>
-            </div>
+            )}
         </div>
     );
 };

@@ -27,7 +27,7 @@ export const RailCard = ({
   const MetaRightIcon = metaRight?.icon;
 
   const card = (
-    <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#141416] transition-transform duration-300 hover:-translate-y-1 hover:border-white/25">
+    <div className="rail-card relative rounded-2xl overflow-hidden border border-white/10 bg-[#141416] transition-transform duration-300 hover:-translate-y-1 hover:border-white/25">
       {/* Thumbnail */}
       <div className="relative aspect-[16/10] bg-gradient-to-br from-[#1c1c22] via-[#101014] to-[#1c1c22]">
         {image ? (

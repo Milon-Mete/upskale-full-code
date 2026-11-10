@@ -12,6 +12,8 @@ const { adminOnly, requireAuth } = require('../middleware/auth');
 const Cohort = require('../models/Cohort');
 const Masterclass = require('../models/Masterclass'); // Added missing Masterclass import
 const Referral = require('../models/Referral');
+const Certificate = require('../models/Certificate');
+const { quizFor, gradeQuiz, PASS_MARK } = require('../utils/cohortQuizzes');
 
 const razorpay = new Razorpay({
     key_id: process.env.RAZORPAY_KEY_ID,
@@ -617,6 +619,103 @@ router.get('/content/:id', requireAuth, async (req, res) => {
     } catch (err) {
         console.error("Fetch Content Error:", err);
         res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// =====================================================
+// 7. CERTIFICATION QUIZ (SECURED)
+// =====================================================
+
+const ownedCohort = (user, cohortId) => user.enrolledCourses.find(
+    c => c.item.toString() === cohortId && c.itemModel === 'Cohort'
+);
+
+// Questions only. The answers stay on the server.
+router.get('/quiz/:id', requireAuth, async (req, res) => {
+    try {
+        const enrollment = ownedCohort(req.user, req.params.id);
+        if (!enrollment && req.user.role !== 'admin') {
+            return res.status(403).json({ message: "You have not purchased this course." });
+        }
+
+        const cohort = await Cohort.findById(req.params.id).select('title');
+        const quiz = cohort && quizFor(cohort.title);
+        if (!quiz) return res.status(404).json({ message: "This course does not have a certification quiz yet." });
+
+        res.json({
+            courseName: quiz.courseName,
+            passMark: PASS_MARK,
+            questions: quiz.questions.map(({ question, options }) => ({ question, options })),
+            certificateUrl: enrollment?.certificateUrl || null
+        });
+    } catch (err) {
+        console.error("Quiz Fetch Error:", err);
+        res.status(500).json({ message: "Server Error" });
+    }
+});
+
+// Grades the attempt and, on a pass, issues a verifiable certificate once per course.
+router.post('/certificate/:id', requireAuth, async (req, res) => {
+    try {
+        const cohortId = req.params.id;
+        const user = req.user;
+        const enrollment = ownedCohort(user, cohortId);
+        if (!enrollment) return res.status(403).json({ message: "Only students enrolled in this course can earn its certificate." });
+
+        const cohort = await Cohort.findById(cohortId).select('title');
+        const quiz = cohort && quizFor(cohort.title);
+        if (!quiz) return res.status(404).json({ message: "This course does not have a certification quiz yet." });
+
+        const score = gradeQuiz(quiz.questions, req.body.answers);
+        if (score < PASS_MARK) return res.json({ passed: false, score, passMark: PASS_MARK });
+
+        if (enrollment.certificateUrl) {
+            return res.json({ passed: true, score, certificateUrl: enrollment.certificateUrl });
+        }
+
+        const certificateId = `CERT-${crypto.randomBytes(5).toString('hex').toUpperCase()}`;
+        const certificateUrl = `/view-certificate/${certificateId}`;
+        const issuedDate = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+
+        const certificate = await new Certificate({
+            certificateId,
+            user: user._id,
+            studentName: user.name,
+            phone: user.phone || 'N/A',
+            course: cohort._id,
+            itemModel: 'Cohort',
+            courseName: quiz.courseName,
+            planType: enrollment.planType || 'recorded',
+            score,
+            issuedDate,
+            certificateUrl
+        }).save();
+
+        // Only attach it if no certificate landed in the meantime (a double tap
+        // on Submit). Atomic, so it doesn't depend on the rest of the record.
+        const linked = await User.updateOne(
+            { _id: user._id, enrolledCourses: { $elemMatch: { item: cohort._id, itemModel: 'Cohort', certificateUrl: null } } },
+            {
+                $set: {
+                    "enrolledCourses.$.certificateUrl": certificateUrl,
+                    "enrolledCourses.$.issuedDate": issuedDate,
+                    "enrolledCourses.$.score": score,
+                    "enrolledCourses.$.progress": 100
+                }
+            }
+        );
+
+        if (linked.modifiedCount === 0) {
+            await Certificate.deleteOne({ _id: certificate._id });
+            const fresh = await User.findById(user._id).select('enrolledCourses');
+            const existing = ownedCohort(fresh, cohortId);
+            return res.json({ passed: true, score, certificateUrl: existing?.certificateUrl || null });
+        }
+
+        res.json({ passed: true, score, certificateUrl });
+    } catch (err) {
+        console.error("Certificate Issue Error:", err);
+        res.status(500).json({ message: "Could not issue the certificate. Please try again." });
     }
 });
 

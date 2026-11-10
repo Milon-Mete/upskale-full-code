@@ -1,65 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   PlayCircle, CheckCircle2, ChevronDown, ChevronUp, 
   FileText, Download, Lock, Menu, X, ArrowLeft, Clock,
   HelpCircle, Award, Users, ArrowRight 
 } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
-// Remove this: import html2canvas from 'html2canvas';
-
-// Add these:
-import { toPng } from 'html-to-image';
-import jsPDF from 'jspdf';
 import { BASE_URL } from '../config';
-
-const EXCEL_QUIZ = [
-    { question: "What is MS Excel?", options: ["Word processor", "Spreadsheet software", "Browser", "Game"], answer: 1 },
-    { question: "What is the default file extension of Excel?", options: [".docx", ".xlsx", ".pptx", ".txt"], answer: 1 },
-    { question: "A cell in Excel is formed by:", options: ["Row only", "Row and column intersection", "Column only", "Sheet only"], answer: 1 },
-    { question: "Which key is used to select all data?", options: ["Ctrl + C", "Ctrl + A", "Ctrl + V", "Ctrl + X"], answer: 1 },
-    { question: "What is a workbook?", options: ["Single cell", "Collection of worksheets", "Chart only", "Formula"], answer: 1 },
-    { question: "Which symbol is used to start a formula?", options: ["#", "=", "@", "&"], answer: 1 },
-    { question: "What is a row in Excel?", options: ["Vertical line", "Horizontal line", "Box", "Table"], answer: 1 },
-    { question: "What is a column in Excel?", options: ["Horizontal line", "Vertical line", "Row", "Cell"], answer: 1 },
-    { question: "Which shortcut is used to copy?", options: ["Ctrl + V", "Ctrl + C", "Ctrl + X", "Ctrl + Z"], answer: 1 },
-    { question: "Which option is used to paste?", options: ["Ctrl + C", "Ctrl + V", "Ctrl + X", "Ctrl + A"], answer: 1 }
-];
-
-const POWER_BI_QUIZ = [
-    { question: "What is Power BI mainly used for?", options: ["Editing videos", "Data visualization and reporting", "Writing documents", "Sending emails"], answer: 1 },
-    { question: "Which tool inside Power BI is used to clean and shape data?", options: ["Power Query", "Paint", "Slide Sorter", "Mail Merge"], answer: 0 },
-    { question: "What is the file extension of a Power BI Desktop file?", options: [".xlsx", ".docx", ".pbix", ".pptx"], answer: 2 },
-    { question: "Which language is used to write measures in Power BI?", options: ["HTML", "DAX", "CSS", "Java"], answer: 1 },
-    { question: "What does a relationship connect in a data model?", options: ["Two tables", "Two charts", "Two fonts", "Two pages"], answer: 0 },
-    { question: "Which visual lets a viewer filter a report page?", options: ["Text box", "Image", "Slicer", "Shape"], answer: 2 },
-    { question: "Which visual is best for showing a trend over time?", options: ["Line chart", "Pie chart", "Card", "Table"], answer: 0 },
-    { question: "What does a Card visual usually display?", options: ["A map", "A single key number", "A long list", "A photo"], answer: 1 },
-    { question: "In a star schema, which table holds the measurable values?", options: ["Dimension table", "Fact table", "Calendar only", "Theme table"], answer: 1 },
-    { question: "What is the Power BI Service used for?", options: ["Publishing and sharing reports online", "Typing letters", "Editing photos", "Recording audio"], answer: 0 },
-];
-
-const GEN_AI_QUIZ = [
-    { question: "What does Generative AI do?", options: ["Only stores files", "Creates new content like text and images", "Only repairs hardware", "Only blocks viruses"], answer: 1 },
-    { question: "What is a prompt?", options: ["The instruction you give an AI tool", "A computer cable", "A type of virus", "A file format"], answer: 0 },
-    { question: "Which of these is an AI chat assistant?", options: ["Notepad", "Calculator", "ChatGPT", "Paint"], answer: 2 },
-    { question: "How do you usually get a better answer from an AI tool?", options: ["Use fewer details", "Give clear context and instructions", "Type in capitals", "Restart the computer"], answer: 1 },
-    { question: "What does 'hallucination' mean in AI?", options: ["The AI states something false with confidence", "The screen flickers", "The app closes", "The file gets bigger"], answer: 0 },
-    { question: "What should you do with important facts from an AI answer?", options: ["Share them right away", "Delete them", "Verify them from a reliable source", "Ignore all of them"], answer: 2 },
-    { question: "What does a text-to-image tool do?", options: ["Prints documents", "Creates an image from a written description", "Scans barcodes", "Compresses photos"], answer: 1 },
-    { question: "Which information should you avoid pasting into public AI tools?", options: ["Private or confidential data", "A public news headline", "A recipe name", "A general question"], answer: 0 },
-    { question: "What does LLM stand for?", options: ["Long Link Manager", "Large Language Model", "Local Logic Machine", "Live Learning Mode"], answer: 1 },
-    { question: "How should AI be used at work?", options: ["Never check its output", "Replace all thinking", "As an assistant, with human review", "Only for games"], answer: 2 },
-];
-
-// The live cohort records double as the recorded courses, so the certificate
-// and quiz use the course subject rather than the cohort title.
-const courseDetails = (title = '') => {
-    const name = title.toLowerCase();
-    if (name.includes('power bi')) return { certTitle: 'Power BI Data Visualization', quiz: POWER_BI_QUIZ };
-    if (name.includes('gen ai')) return { certTitle: 'Gen AI Tools Mastery', quiz: GEN_AI_QUIZ };
-    if (name.includes('excel')) return { certTitle: 'MS Excel with Generative AI', quiz: EXCEL_QUIZ };
-    return { certTitle: title, quiz: EXCEL_QUIZ };
-};
 
 const ExcelPlaylistPage = () => {
   const navigate = useNavigate();
@@ -67,7 +13,6 @@ const ExcelPlaylistPage = () => {
 
   // --- STATE MANAGEMENT ---
   const [courseContent, setCourseContent] = useState([]);
-  const [courseTitle, setCourseTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [notOwned, setNotOwned] = useState(false);
@@ -76,26 +21,23 @@ const ExcelPlaylistPage = () => {
   const [activeLesson, setActiveLesson] = useState({ moduleIndex: 0, lessonIndex: 0 });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const { certTitle, quiz } = courseDetails(courseTitle);
-
-  useEffect(() => {
-      fetch(`${BASE_URL}/cohorts`)
-          .then((res) => res.json())
-          .then((list) => setCourseTitle((Array.isArray(list) ? list : []).find((c) => c._id === cohortId)?.title || ''))
-          .catch(() => {});
-  }, [cohortId]);
-
   // --- QUIZ & CERTIFICATE STATE ---
+  // Questions come from the server, which grades the attempt and issues the
+  // certificate, so a pass can't be faked from the browser.
   const [isQuizOpen, setIsQuizOpen] = useState(false);
+  const [quiz, setQuiz] = useState([]);
+  const [quizError, setQuizError] = useState('');
   const [quizStep, setQuizStep] = useState(0);
-  const [userAnswers, setUserAnswers] = useState(Array(10).fill(null));
+  const [userAnswers, setUserAnswers] = useState([]);
   const [score, setScore] = useState(0);
-  const [showCertificate, setShowCertificate] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false); // 🔴 NEW DOWNLOAD STATE
+  const [passMark, setPassMark] = useState(70);
+  const [certificateUrl, setCertificateUrl] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const [userName, setUserName] = useState("Student");
-  
-  const certificateRef = useRef(null); // 🔴 REF FOR CERTIFICATE DOWNLOAD
+  const authHeaders = () => {
+      const token = localStorage.getItem('token');
+      return { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  };
 
   const getEmbedUrl = (videoId) => {
     if (!videoId) return "";
@@ -121,11 +63,6 @@ const ExcelPlaylistPage = () => {
         setIsLoading(true);
         const token = localStorage.getItem('token') || '';
         
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUserName(JSON.parse(storedUser).name || "Student");
-        }
-
         const response = await fetch(`${BASE_URL}/cohorts/content/${cohortId}`, {
             method: 'GET',
             headers: {
@@ -169,12 +106,27 @@ const ExcelPlaylistPage = () => {
   }, [cohortId]);
 
   // --- QUIZ LOGIC HANDLERS ---
-  const openQuiz = () => {
-      setIsQuizOpen(true);
-      setShowCertificate(false);
+  const resetAttempt = (count) => {
       setQuizStep(0);
-      setUserAnswers(Array(10).fill(null));
+      setUserAnswers(Array(count).fill(null));
       setScore(0);
+  };
+
+  const openQuiz = async () => {
+      setIsQuizOpen(true);
+      setQuizError('');
+      setQuiz([]);
+      try {
+          const res = await fetch(`${BASE_URL}/cohorts/quiz/${cohortId}`, { headers: authHeaders(), credentials: 'include' });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Could not load the quiz.');
+          setPassMark(data.passMark || 70);
+          setCertificateUrl(data.certificateUrl);
+          setQuiz(data.questions);
+          resetAttempt(data.questions.length);
+      } catch (err) {
+          setQuizError(err.message || 'Could not load the quiz. Please try again.');
+      }
   };
 
   const handleAnswerSelect = (optionIndex) => {
@@ -183,64 +135,32 @@ const ExcelPlaylistPage = () => {
       setUserAnswers(newAnswers);
   };
 
-  const nextQuestion = () => {
-      if (quizStep < 9) {
+  const nextQuestion = async () => {
+      if (quizStep < quiz.length - 1) {
           setQuizStep(quizStep + 1);
-      } else {
-          let finalScore = 0;
-          userAnswers.forEach((ans, index) => {
-              if (ans === quiz[index].answer) finalScore += 10;
+          return;
+      }
+      setSubmitting(true);
+      setQuizError('');
+      try {
+          const res = await fetch(`${BASE_URL}/cohorts/certificate/${cohortId}`, {
+              method: 'POST', headers: authHeaders(), credentials: 'include',
+              body: JSON.stringify({ answers: userAnswers })
           });
-          setScore(finalScore);
-          setQuizStep(10);
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.message || 'Could not submit your answers.');
+          setScore(data.score);
+          if (data.certificateUrl) setCertificateUrl(data.certificateUrl);
+          setQuizStep(quiz.length);
+      } catch (err) {
+          setQuizError(err.message || 'Could not submit your answers. Please try again.');
+      } finally {
+          setSubmitting(false);
       }
   };
 
   const handleLiveUpsell = () => {
       navigate(`/course/ms-excel-with-generative-ai-1771873408075`);
-  };
-
-  // 🔴 DOWNLOAD CERTIFICATE HANDLER
-// 🔴 DOWNLOAD CERTIFICATE HANDLER (PDF VERSION)
-  const downloadCertificate = async () => {
-      if (!certificateRef.current) return;
-      
-      setIsDownloading(true);
-      try {
-          const element = certificateRef.current;
-
-          // 1. Convert the HTML to a high-quality PNG
-          const imgData = await toPng(element, {
-              quality: 1,
-              pixelRatio: 2, // Keeps text crisp
-              backgroundColor: '#121212',
-              // Forcing dimensions ensures the PDF doesn't stretch weirdly on mobile
-              width: 600, 
-              height: 800,
-              style: {
-                  transform: 'scale(1)',
-                  transformOrigin: 'top left',
-                  margin: 0
-              }
-          });
-
-          // 2. Initialize the PDF document
-          const pdf = new jsPDF({
-              orientation: 'portrait',
-              unit: 'px',
-              format: [600, 800]
-          });
-
-          // 3. Add the image to the PDF and save
-          pdf.addImage(imgData, 'PNG', 0, 0, 600, 800);
-          pdf.save(`${userName.replace(/\s+/g, '_')}_Certificate.pdf`);
-
-      } catch (error) {
-          console.error("Failed to generate PDF:", error);
-          alert("Failed to download the certificate. Please check browser permissions.");
-      } finally {
-          setIsDownloading(false);
-      }
   };
 
   if (isLoading) {
@@ -274,13 +194,8 @@ const ExcelPlaylistPage = () => {
   }
 
   const currentVideo = courseContent[activeLesson.moduleIndex]?.lessons[activeLesson.lessonIndex];
+  const quizDone = quiz.length > 0 && quizStep >= quiz.length;
   
-  const courseTitleForCert = certTitle;
-
-  const todayDate = new Date().toLocaleDateString('en-GB', {
-      day: '2-digit', month: '2-digit', year: 'numeric'
-  });
-
   return (
     <div className="min-h-screen bg-[#050505] text-gray-100 font-sans flex flex-col h-screen overflow-hidden relative">
       
@@ -345,7 +260,7 @@ const ExcelPlaylistPage = () => {
                         <CheckCircle2 size={16} /> Mark as Complete
                     </button>
                     <button onClick={openQuiz} className="bg-gradient-to-r from-yellow-500 to-amber-600 text-black px-6 py-2.5 rounded-lg font-black text-sm transition-all flex items-center gap-2 hover:scale-105 shadow-lg shadow-yellow-500/20">
-                        <HelpCircle size={16} /> Take Quiz & Certify
+                        <HelpCircle size={16} /> {certificateUrl ? 'View My Certificate' : 'Take Quiz & Certify'}
                     </button>
                 </div>
              </div>
@@ -418,189 +333,118 @@ const ExcelPlaylistPage = () => {
         </aside>
       </main>
 
-      {/* --- QUIZ / CERTIFICATE MODAL OVERLAY --- */}
+      {/* --- QUIZ MODAL --- */}
       {isQuizOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
               <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsQuizOpen(false)}></div>
-              
-              {showCertificate ? (
-                  // 🔴 WRAPPED CERTIFICATE IN A CONTAINER FOR DOWNLOADING
-                  <div className="relative z-10 flex flex-col items-center w-full max-w-[600px] animate-fade-in">
-                      
-                      <button onClick={() => setShowCertificate(false)} className="absolute -top-12 right-0 md:-right-12 z-50 text-gray-400 hover:text-white bg-black/50 hover:bg-red-500 p-2 rounded-full transition-all">
+              <div className="w-full max-w-2xl bg-[#121212] border border-white/10 rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
+                  <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/50">
+                      <div>
+                          <h2 className="font-black text-xl text-white">Certification Quiz</h2>
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-1">Score {passMark}% or more to earn your certificate</p>
+                      </div>
+                      <button onClick={() => setIsQuizOpen(false)} className="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full transition-colors">
                           <X size={20} />
                       </button>
-
-                      {/* 🔴 REF ATTACHED TO THE ACTUAL CERTIFICATE DESIGN DIV */}
-                      <div ref={certificateRef} className="w-full aspect-[3/4] bg-[#121212] rounded-xl shadow-2xl relative overflow-hidden border border-white/10 flex flex-col">
-                          
-                          {/* Certificate Decor */}
-                          <div className="absolute top-0 right-0 w-[90%] h-[90%] border-[60px] border-white/5 rounded-full translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
-                          <div className="absolute bottom-0 left-0 w-[70%] h-[70%] border-[40px] border-white/5 rounded-full -translate-x-1/4 translate-y-1/4 pointer-events-none"></div>
-
-                          <div className="relative z-10 flex flex-col h-full p-8 md:p-12">
-                              <div className="text-white font-bold tracking-widest text-lg mb-6 opacity-90">
-                                  <img crossOrigin="anonymous" src="https://res.cloudinary.com/dvcs9x8yp/image/upload/v1775412223/20250730_170449_0000_uq4d24.png" alt="UPSKALE Logo" className="h-5 md:h-6 w-auto object-contain drop-shadow-[0_0_15px_rgba(0,138,69,0.3)]" />
-                              </div>
-
-                              <h3 className="text-4xl md:text-5xl font-semibold text-white leading-[1.1] mb-4 md:mb-6 tracking-tight">
-                                  Certificate of<br />Completion
-                              </h3>
-
-                              <div className="mb-6 md:mb-8">
-                                  <span className="inline-block px-3 py-1.5 bg-[#eab308]/10 text-[#eab308] text-xs md:text-sm font-black uppercase tracking-widest rounded border border-[#eab308]/20">
-                                      Micro-Skill Certification
-                                  </span>
-                              </div>
-
-                              <p className="text-gray-400 text-xs md:text-sm leading-relaxed mb-8 md:mb-10 opacity-90 pr-8">
-                                  Congratulations on taking your next leap towards accelerating your career growth.<br />Keep learning, keep growing!
-                              </p>
-
-                              <div className="flex-1">
-                                  <p className="text-gray-400 text-[10px] md:text-xs mb-1 md:mb-2 opacity-80 tracking-wide uppercase">This certificate is proudly awarded to</p>
-                                  <h4 className="text-3xl md:text-4xl font-bold text-white mb-6 md:mb-8 tracking-tight line-clamp-1">
-                                      {userName}
-                                  </h4>
-
-                                  <p className="text-gray-400 text-[10px] md:text-xs mb-1 md:mb-2 opacity-80 tracking-wide uppercase">for successfully mastering the micro-skill</p>
-                                  <h5 className="text-xl md:text-2xl font-medium text-[#00d26a] leading-tight line-clamp-2">
-                                      {courseTitleForCert}
-                                  </h5>
-                              </div>
-
-                              <div className="flex justify-between items-end mt-4 md:mt-8 pt-4 md:pt-8">
-                                  <div className="w-[35%]">
-                                      <div className="border-t-[2px] border-white/30 mb-2 md:mb-3"></div>
-                                      <p className="text-white text-base md:text-lg font-medium mb-1 whitespace-nowrap">{todayDate}</p>
-                                      <p className="text-gray-500 text-[8px] md:text-[10px] opacity-80 uppercase tracking-widest">Date</p>
-                                  </div>
-
-                                  <div className="w-[45%] text-right relative">
-                                      <h1 className="w-auto mb-1 md:mb-2 text-[16px] md:text-[18px]" style={{ fontFamily: "'Brush Script MT', 'Great Vibes', cursive", color: '#ffffff' }}>Debkanta Chakraborty</h1>
-                                      <div className="border-t-[2px] border-white/30 mb-2 md:mb-3"></div>
-                                      <p className="text-white text-xs md:text-sm font-medium mb-1 whitespace-nowrap">Debkanta Chakraborty</p>
-                                      <p className="text-gray-500 text-[8px] md:text-[10px] opacity-80 leading-tight">Founder & CEO, Upskale</p>
-                                  </div>
-                              </div>
-
-                              <div className="absolute bottom-4 left-8 md:left-12">
-                                  <p className="text-[8px] text-gray-600 font-mono tracking-widest">ID: MOCK-CERT-1234</p>
-                              </div>
-                          </div>
-                      </div>
-                      
-                      {/* 🔴 NEW DOWNLOAD BUTTON */}
-                      <button 
-                          onClick={downloadCertificate} 
-                          disabled={isDownloading}
-                          className="mt-6 w-full max-w-[300px] flex items-center justify-center gap-2 bg-[#008a45] hover:bg-[#007038] text-white font-bold py-3 px-6 rounded-xl transition-all disabled:opacity-50 disabled:cursor-wait"
-                      >
-                          {isDownloading ? (
-                              <span className="animate-pulse">Generating PNG...</span>
-                          ) : (
-                              <>
-                                  <Download size={20} />
-                                  Download Certificate
-                              </>
-                          )}
-                      </button>
-
                   </div>
-              ) : (
-                  // THE QUIZ VIEW (Unchanged)
-                  <div className="w-full max-w-2xl bg-[#121212] border border-white/10 rounded-3xl shadow-2xl relative z-10 overflow-hidden flex flex-col max-h-[90vh]">
-                      <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/50">
-                          <div>
-                              <h2 className="font-black text-xl text-white">Certification Quiz</h2>
-                              <p className="text-xs text-gray-500 mt-1 line-clamp-1">Final Assessment</p>
+
+                  <div className="p-6 md:p-8 overflow-y-auto flex-1 custom-scrollbar">
+                      {quiz.length === 0 ? (
+                          <div className="text-center py-10">
+                              {quizError ? (
+                                  <>
+                                      <p className="text-white font-bold mb-4">{quizError}</p>
+                                      <button onClick={openQuiz} className="px-6 py-3 bg-yellow-500 text-black font-black rounded-xl">Try again</button>
+                                  </>
+                              ) : (
+                                  <p className="text-gray-400 animate-pulse">Loading quiz...</p>
+                              )}
                           </div>
-                          <button onClick={() => setIsQuizOpen(false)} className="text-gray-500 hover:text-white bg-white/5 p-2 rounded-full transition-colors">
-                              <X size={20} />
-                          </button>
-                      </div>
-
-                      <div className="p-8 overflow-y-auto flex-1 custom-scrollbar">
-                          {quizStep < 10 ? (
-                              <div className="animate-fade-in">
-                                  <div className="flex justify-between items-center mb-6">
-                                      <span className="text-yellow-500 font-bold text-sm tracking-widest uppercase">Question {quizStep + 1} of 10</span>
-                                      <div className="h-2 w-32 bg-gray-800 rounded-full overflow-hidden">
-                                          <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${((quizStep + 1) / 10) * 100}%` }}></div>
-                                      </div>
-                                  </div>
-                                  <h3 className="text-2xl font-semibold text-white mb-8 leading-relaxed">
-                                      {quiz[quizStep].question}
-                                  </h3>
-                                  
-                                  <div className="space-y-4">
-                                      {quiz[quizStep].options.map((option, idx) => (
-                                          <button 
-                                              key={idx}
-                                              onClick={() => handleAnswerSelect(idx)}
-                                              className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${userAnswers[quizStep] === idx ? 'border-yellow-500 bg-yellow-500/10 text-white' : 'border-white/10 text-gray-400 hover:border-white/30 hover:bg-white/5'}`}
-                                          >
-                                              <span className="font-bold mr-4 opacity-50">{['A', 'B', 'C', 'D'][idx]}.</span> {option}
-                                          </button>
-                                      ))}
+                      ) : certificateUrl && !quizDone && quizStep === 0 && userAnswers.every((a) => a === null) ? (
+                          <div className="text-center py-4">
+                              <div className="w-24 h-24 bg-[#008a45]/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#008a45]/50">
+                                  <Award className="text-[#00d26a]" size={48} />
+                              </div>
+                              <h3 className="text-2xl font-black text-white mb-2">You're already certified</h3>
+                              <p className="text-gray-400 mb-8">Your certificate has its own verification link you can share.</p>
+                              <button onClick={() => navigate(certificateUrl)} className="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 transition-all active:scale-95">
+                                  View &amp; Download Certificate
+                              </button>
+                          </div>
+                      ) : !quizDone ? (
+                          <div className="animate-fade-in">
+                              <div className="flex justify-between items-center mb-6">
+                                  <span className="text-yellow-500 font-bold text-sm tracking-widest uppercase">Question {quizStep + 1} of {quiz.length}</span>
+                                  <div className="h-2 w-32 bg-gray-800 rounded-full overflow-hidden">
+                                      <div className="h-full bg-yellow-500 rounded-full transition-all" style={{ width: `${((quizStep + 1) / quiz.length) * 100}%` }}></div>
                                   </div>
                               </div>
-                          ) : (
-                              <div className="text-center animate-fade-in-up py-4">
-                                  {score >= 70 ? (
-                                      <>
-                                          <div className="w-24 h-24 bg-[#008a45]/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#008a45]/50">
-                                              <Award className="text-[#00d26a]" size={48} />
-                                          </div>
-                                          <h3 className="text-3xl font-black text-white mb-2">You Passed!</h3>
-                                          <p className="text-gray-400 mb-8">Score: <span className="text-[#00d26a] font-bold">{score}%</span></p>
-                                          
-                                          <button onClick={() => setShowCertificate(true)} className="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 transition-all mb-6 active:scale-95">
-                                              View Official Certificate
-                                          </button>
-
-                                          <div className="h-px w-full border-b border-dashed border-white/10 mb-8 relative">
-                                              <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#121212] px-4 text-xs text-gray-500 font-bold uppercase tracking-widest">Wait, there's more</span>
-                                          </div>
-
-                                          <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-2xl p-6 text-left relative overflow-hidden">
-                                              <div className="absolute -right-10 -top-10 opacity-10"><Users size={120}/></div>
-                                              <h4 className="text-xl font-bold text-white mb-2 relative z-10">Want 1:1 Live Teaching?</h4>
-                                              <p className="text-gray-300 text-sm mb-6 relative z-10">Upgrade to the Live Cohort for personal mentorship, live Q&A, and resume building.</p>
-                                              <button onClick={handleLiveUpsell} className="relative z-10 bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-purple-600/30 w-full sm:w-auto flex items-center justify-center gap-2">
-                                                  View Live Course <ArrowRight size={16}/>
-                                              </button>
-                                          </div>
-                                      </>
-                                  ) : (
-                                      <>
-                                          <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/30">
-                                              <X className="text-red-500" size={48} />
-                                          </div>
-                                          <h3 className="text-3xl font-black text-white mb-2">Keep Learning</h3>
-                                          <p className="text-gray-400 mb-8">Score: <span className="text-red-500 font-bold">{score}%</span> (70% required to pass)</p>
-                                          <button onClick={() => {setQuizStep(0); setUserAnswers(Array(10).fill(null));}} className="w-full py-4 bg-[#1a1a1a] border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-all">
-                                              Retake Quiz
-                                          </button>
-                                      </>
-                                  )}
+                              <h3 className="text-xl md:text-2xl font-semibold text-white mb-8 leading-relaxed">
+                                  {quiz[quizStep].question}
+                              </h3>
+                              <div className="space-y-4">
+                                  {quiz[quizStep].options.map((option, idx) => (
+                                      <button
+                                          key={idx}
+                                          onClick={() => handleAnswerSelect(idx)}
+                                          className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${userAnswers[quizStep] === idx ? 'border-yellow-500 bg-yellow-500/10 text-white' : 'border-white/10 text-gray-400 hover:border-white/30 hover:bg-white/5'}`}
+                                      >
+                                          <span className="font-bold mr-4 opacity-50">{['A', 'B', 'C', 'D'][idx]}.</span> {option}
+                                      </button>
+                                  ))}
                               </div>
-                          )}
-                      </div>
+                              {quizError && <p className="text-red-400 text-sm mt-4">{quizError}</p>}
+                          </div>
+                      ) : score >= passMark ? (
+                          <div className="text-center animate-fade-in-up py-4">
+                              <div className="w-24 h-24 bg-[#008a45]/20 rounded-full flex items-center justify-center mx-auto mb-6 border border-[#008a45]/50">
+                                  <Award className="text-[#00d26a]" size={48} />
+                              </div>
+                              <h3 className="text-3xl font-black text-white mb-2">You Passed!</h3>
+                              <p className="text-gray-400 mb-8">Score: <span className="text-[#00d26a] font-bold">{score}%</span></p>
+                              <button onClick={() => navigate(certificateUrl)} disabled={!certificateUrl} className="w-full py-4 bg-white text-black font-black rounded-xl hover:bg-gray-200 transition-all mb-6 active:scale-95 disabled:opacity-50">
+                                  View &amp; Download Certificate
+                              </button>
 
-                      {quizStep < 10 && (
-                          <div className="p-6 border-t border-white/10 bg-black/50">
-                              <button 
-                                  onClick={nextQuestion}
-                                  disabled={userAnswers[quizStep] === null}
-                                  className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex justify-center items-center gap-2 active:scale-95"
-                              >
-                                  {quizStep === 9 ? 'Submit Final Answers' : 'Next Question'} <ArrowRight size={18} />
+                              <div className="h-px w-full border-b border-dashed border-white/10 mb-8 relative">
+                                  <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#121212] px-4 text-xs text-gray-500 font-bold uppercase tracking-widest">Wait, there's more</span>
+                              </div>
+
+                              <div className="bg-gradient-to-r from-purple-900/40 to-indigo-900/40 border border-purple-500/30 rounded-2xl p-6 text-left relative overflow-hidden">
+                                  <div className="absolute -right-10 -top-10 opacity-10"><Users size={120}/></div>
+                                  <h4 className="text-xl font-bold text-white mb-2 relative z-10">Want 1:1 Live Teaching?</h4>
+                                  <p className="text-gray-300 text-sm mb-6 relative z-10">Upgrade to the Live Cohort for personal mentorship, live Q&amp;A, and resume building.</p>
+                                  <button onClick={handleLiveUpsell} className="relative z-10 bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold py-3 px-6 rounded-xl transition-colors shadow-lg shadow-purple-600/30 w-full sm:w-auto flex items-center justify-center gap-2">
+                                      View Live Course <ArrowRight size={16}/>
+                                  </button>
+                              </div>
+                          </div>
+                      ) : (
+                          <div className="text-center animate-fade-in-up py-4">
+                              <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/30">
+                                  <X className="text-red-500" size={48} />
+                              </div>
+                              <h3 className="text-3xl font-black text-white mb-2">Keep Learning</h3>
+                              <p className="text-gray-400 mb-8">Score: <span className="text-red-500 font-bold">{score}%</span> ({passMark}% required to pass)</p>
+                              <button onClick={() => resetAttempt(quiz.length)} className="w-full py-4 bg-[#1a1a1a] border border-white/10 text-white font-bold rounded-xl hover:bg-white/5 transition-all">
+                                  Retake Quiz
                               </button>
                           </div>
                       )}
                   </div>
-              )}
+
+                  {quiz.length > 0 && !quizDone && !(certificateUrl && quizStep === 0 && userAnswers.every((a) => a === null)) && (
+                      <div className="p-6 border-t border-white/10 bg-black/50">
+                          <button
+                              onClick={nextQuestion}
+                              disabled={userAnswers[quizStep] === null || submitting}
+                              className="w-full py-4 bg-yellow-500 text-black font-black rounded-xl hover:bg-yellow-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex justify-center items-center gap-2 active:scale-95"
+                          >
+                              {submitting ? 'Checking...' : quizStep === quiz.length - 1 ? 'Submit Final Answers' : 'Next Question'} <ArrowRight size={18} />
+                          </button>
+                      </div>
+                  )}
+              </div>
           </div>
       )}
     </div>

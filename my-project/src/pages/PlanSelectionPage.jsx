@@ -6,8 +6,8 @@ import LoginModal from '../components/LoginModal';
 import '../swipes.css';
 import { SWIPES_PRICE, SWIPES_LAUNCH_END, swipesMonths } from '../swipes';
 
-// Sales stay closed until the real test purchase passes. /pro?launch opens checkout for that test.
-const SALES_OPEN = new URLSearchParams(window.location.search).has('launch');
+// Swipes Pro is on sale. Set to false to show "Opening soon" and stop checkout.
+const SALES_OPEN = true;
 
 const formatDate = (date) => new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 const rupees = (amount) => `₹${amount.toLocaleString('en-IN')}`;
@@ -159,9 +159,11 @@ const PlanSelectionPage = () => {
                     } catch (err) {
                         console.error('Verify did not reach the server, the webhook will finish it', err);
                     }
+                    // Stay here: the page switches to the member card with Start learning.
                     await refreshUser();
                     setProcessing(false);
-                    navigate(returnPath, { replace: true });
+                    setMessage('Welcome to Swipes Pro!');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                 }
             });
             rzp.on('payment.failed', (response) => {
@@ -276,7 +278,7 @@ const PlanSelectionPage = () => {
                         ) : (
                             <button onClick={() => setConfirmCancel(true)} className="mt-4 text-sm text-[#6b3a1a] underline">Cancel autopay</button>
                         ))}
-                        {message && <p className="text-sm text-red-600 mt-3">{message}</p>}
+                        {message && <p className="text-sm font-bold text-green-700 mt-3">{message}</p>}
                     </div>
                 ) : (
                     <>

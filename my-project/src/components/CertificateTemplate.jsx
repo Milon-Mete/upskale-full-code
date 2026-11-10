@@ -91,6 +91,12 @@ const qrLink = window.location.origin;
                         <div className="text-[9px] font-bold uppercase tracking-widest mt-1" style={{ color: '#000000' }}>
                             Quality Management
                         </div>
+                        <div className="text-[12px] font-black tracking-wide mt-5" style={{ color: '#000000' }}>
+                            DPIIT Recognised
+                        </div>
+                        <div className="text-[9px] font-bold uppercase tracking-widest mt-1 text-center" style={{ color: '#000000' }}>
+                            Startup India · DIPP276171
+                        </div>
                     </div>
 
                     {/* Spacer */}

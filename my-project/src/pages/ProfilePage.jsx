@@ -176,6 +176,14 @@ useEffect(() => {
                 if (freshUserData.authProvider === 'google' && !freshUserData.phone) {
                     setIsNewGoogleUser(true);
                 }
+            } else if (res.status === 401) {
+                // The 7-day login has expired. The cached profile would show stale
+                // courses, so sign in again instead.
+                localStorage.removeItem('user');
+                localStorage.removeItem('token');
+                window.dispatchEvent(new Event("storage"));
+                navigate('/login', { replace: true });
+                return;
             } else {
                 console.warn(`Server returned ${res.status}. Using cached local session.`);
             }

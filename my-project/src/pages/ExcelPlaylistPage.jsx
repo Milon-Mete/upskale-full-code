@@ -70,6 +70,7 @@ const ExcelPlaylistPage = () => {
   const [courseTitle, setCourseTitle] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [notOwned, setNotOwned] = useState(false);
   
   const [activeModule, setActiveModule] = useState(0);
   const [activeLesson, setActiveLesson] = useState({ moduleIndex: 0, lessonIndex: 0 });
@@ -134,8 +135,19 @@ const ExcelPlaylistPage = () => {
             credentials: 'include' 
         });
         
-        if (response.status === 401 || response.status === 403) {
-            throw new Error("Content Locked. You must be logged in and enrolled to view this course.");
+        // Logins last 7 days. A stale session still looks logged in on the site,
+        // so send the student to sign in again and bring them back here.
+        if (response.status === 401) {
+            localStorage.removeItem('user');
+            localStorage.removeItem('token');
+            window.dispatchEvent(new Event('storage'));
+            sessionStorage.setItem('redirectAfterLogin', `/learn/${cohortId}`);
+            navigate('/login', { replace: true });
+            return;
+        }
+        if (response.status === 403) {
+            setNotOwned(true);
+            throw new Error("This account hasn't bought this course yet.");
         }
         if (!response.ok) throw new Error(`Server Error: ${response.status}`);
 
@@ -144,7 +156,7 @@ const ExcelPlaylistPage = () => {
         if (data && data.content && data.content.length > 0) {
           setCourseContent(data.content);
         } else {
-          setError("No content available for this course.");
+          setError("The videos for this course are being uploaded. They'll appear here as soon as they're ready.");
         }
       } catch (err) {
         setError(err.message || "Could not connect to the server.");
@@ -243,7 +255,17 @@ const ExcelPlaylistPage = () => {
     return (
       <div className="min-h-screen bg-[#050505] flex items-center justify-center flex-col gap-4 px-4 text-center">
         <Lock size={48} className="text-red-500 mb-2" />
-        <div className="text-white font-bold text-xl">{error || "No content found."}</div>
+        <div className="text-white font-bold text-xl max-w-md">{error || "No content found."}</div>
+        {notOwned && (
+            <p className="text-gray-400 text-sm max-w-md">
+                Paid but can't see it? Make sure you're signed in with the same account you paid with, or restore it from your Profile with the payment id from your receipt.
+            </p>
+        )}
+        {notOwned && (
+            <button onClick={() => navigate('/profile')} className="px-6 py-2 bg-white text-black font-bold rounded-lg">
+                Restore from Profile
+            </button>
+        )}
         <button onClick={() => navigate(-1)} className="mt-4 px-6 py-2 bg-[#008a45] text-white font-bold rounded-lg hover:bg-[#007038] transition-colors">
             Go Back
         </button>

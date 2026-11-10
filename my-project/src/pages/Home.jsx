@@ -51,12 +51,12 @@ const FestiveStrip = () => (
         <div className="flex items-center gap-4 md:gap-5 flex-1 min-w-0">
           <img
             src="/festive-hero.png"
-            alt="Diwali Offer: Data Analyst Beginner Pack"
+            alt="Bhai Dooj Offer: Data Analyst Beginner Pack"
             className="w-16 h-[84px] md:w-24 md:h-32 object-cover object-top rounded-2xl border border-yellow-500/30 shrink-0"
           />
           <div className="min-w-0">
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-yellow-400 mb-1.5 flex items-center gap-1.5">
-              <Sparkles size={13} /> Diwali Offer · Limited Time
+              <Sparkles size={13} /> Bhai Dooj Offer · Limited Time
             </p>
             <h3 className="text-lg md:text-2xl font-black text-white tracking-tight leading-snug">
               Data Analyst Beginner Pack: Excel + AI Tools + Power BI
@@ -67,7 +67,7 @@ const FestiveStrip = () => (
             <p className="mt-2 flex items-end gap-2">
               <span className="festive-slam text-2xl md:text-3xl font-black text-white leading-none">₹199</span>
               <span className="festive-strike text-sm text-white/40">₹2,997</span>
-              <span className="px-2 py-0.5 bg-[#008a45] text-white text-[10px] font-black rounded-md uppercase tracking-wide">Diwali Price</span>
+              <span className="px-2 py-0.5 bg-[#008a45] text-white text-[10px] font-black rounded-md uppercase tracking-wide">Bhai Dooj Price</span>
             </p>
           </div>
         </div>

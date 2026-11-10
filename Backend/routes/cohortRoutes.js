@@ -150,9 +150,9 @@ if (totalAmountToCharge <= 0 || processedItems.length === 0) {
         // on top of the bundle.
         const FESTIVE_BUNDLE_PRICE = 199;
         // Offer window: the Rs 199 lock only applies inside this window.
-        // Diwali window ends 2026-11-08T23:59:59+05:30. After that the bundle
+        // Bhai Dooj window ends 2026-12-31T23:59:59+05:30. After that the bundle
         // check below is skipped and the 3 courses price normally.
-        const FESTIVE_OFFER_END = new Date('2026-11-08T23:59:59+05:30');
+        const FESTIVE_OFFER_END = new Date('2026-12-31T23:59:59+05:30');
         const FESTIVE_BUNDLE_SLUGS = [
             'ms-excel-with-generative-ai',
             'gen-ai-tools-mastery',
@@ -170,7 +170,7 @@ if (totalAmountToCharge <= 0 || processedItems.length === 0) {
             totalCartDiscount = cartBaseTotal - FESTIVE_BUNDLE_PRICE;
             cartFinalTotal = FESTIVE_BUNDLE_PRICE;
             appliedPromotionsData.push({
-                promotionName: 'Diwali Offer: 3-Course Bundle',
+                promotionName: 'Bhai Dooj Offer: 3-Course Bundle',
                 discountValue: totalCartDiscount
             });
         }

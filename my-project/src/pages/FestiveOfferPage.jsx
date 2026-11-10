@@ -79,7 +79,7 @@ const Diya = ({ delay }) => (
 const FestiveOfferPage = () => {
     const navigate = useNavigate();
     const countdown = useCountdown(FESTIVE_OFFER_END);
-    // Diwali window: Rs 199 live until 8 Nov 2026 23:59 IST. When expired, the
+    // Bhai Dooj window: Rs 199 live until 31 Dec 2026 23:59 IST. When expired, the
     // page shows "offer ended" copy and the CTAs route home instead of checkout.
     const isOfferLive = isFestiveLive();
 
@@ -204,7 +204,7 @@ const FestiveOfferPage = () => {
                 amount: data.amount * 100,
                 currency: 'INR',
                 name: 'UPSKALE',
-                description: 'Diwali Offer: 3-Course Recorded Bundle',
+                description: 'Bhai Dooj Offer: 3-Course Recorded Bundle',
                 order_id: data.order_id,
                 handler: async (response) => {
                     try {
@@ -319,10 +319,10 @@ const FestiveOfferPage = () => {
             </nav>
 
             <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
-                {/* Diwali badge */}
+                {/* Bhai Dooj badge */}
                 <div className="pt-4 md:pt-8 flex justify-center festive-rise">
                     <span className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] px-5 py-2 rounded-full shadow-[0_0_30px_rgba(234,179,8,0.45)]">
-                        {isOfferLive ? 'Diwali Special · Ends 8 Nov' : 'Diwali Offer Ended'}
+                        {isOfferLive ? 'Bhai Dooj Special · Ends 31 Dec' : 'Bhai Dooj Offer Ended'}
                     </span>
                 </div>
 
@@ -332,7 +332,7 @@ const FestiveOfferPage = () => {
                         <button
                             type="button"
                             onClick={isOfferLive && !ownsAll && !loadError ? handleBuy : undefined}
-                            aria-label={`Buy the Diwali bundle for ₹${BUNDLE_PRICE}`}
+                            aria-label={`Buy the Bhai Dooj bundle for ₹${BUNDLE_PRICE}`}
                             className="festive-frame max-w-[540px] mx-auto active:scale-[0.99] transition-transform"
                         >
                             <img
@@ -340,7 +340,7 @@ const FestiveOfferPage = () => {
                                 width="1086"
                                 height="1448"
                                 fetchPriority="high"
-                                alt="Diwali Offer: Data Analyst Beginner Pack. 3 recorded courses, AI Tools, Microsoft Excel and Microsoft Power BI. Now only ₹199."
+                                alt="Bhai Dooj Offer: Data Analyst Beginner Pack. 3 recorded courses, AI Tools, Microsoft Excel and Microsoft Power BI. Now only ₹199."
                             />
                         </button>
                         {isOfferLive && (
@@ -361,7 +361,7 @@ const FestiveOfferPage = () => {
                             {isOfferLive && (
                                 <div className="text-center lg:text-left mb-6 festive-rise" style={{ '--delay': '200ms' }}>
                                     <h1 className="text-2xl md:text-4xl font-black tracking-tight leading-tight">
-                                        3 courses. One Diwali price.
+                                        3 courses. One Bhai Dooj price.
                                     </h1>
                                     <p className="mt-3 flex items-end justify-center lg:justify-start gap-3">
                                         <span className="festive-strike text-lg md:text-xl text-white/50 font-bold">₹{totalMrp || 2997}</span>
@@ -406,9 +406,9 @@ const FestiveOfferPage = () => {
                             <div className="mt-6 bg-[#121212]/90 border border-yellow-500/25 rounded-2xl p-5 text-center festive-rise" style={{ '--delay': '700ms' }}>
                                 <p className="text-sm text-gray-400 mb-4">
                                     {isOfferLive ? (
-                                        <>All 3 courses worth <span className="line-through">₹{totalMrp || 2997}</span> · Diwali bundle discount applied at checkout</>
+                                        <>All 3 courses worth <span className="line-through">₹{totalMrp || 2997}</span> · Bhai Dooj bundle discount applied at checkout</>
                                     ) : (
-                                        <>The Rs 199 Diwali offer ended on 8 Nov — the 3 recorded courses are still available at their regular prices</>
+                                        <>The Rs 199 Bhai Dooj offer ended on 31 Dec — the 3 recorded courses are still available at their regular prices</>
                                     )}
                                 </p>
                                 {ownsAll ? (
@@ -458,7 +458,7 @@ const FestiveOfferPage = () => {
             </div>
 
             {/* Sticky bottom offer bar: price + countdown + shine CTA */}
-            {/* Hidden once the Diwali window ends (8 Nov 2026) */}
+            {/* Hidden once the Bhai Dooj window ends (31 Dec 2026) */}
             {isOfferLive && !loadError && (
                 <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d0d]/95 backdrop-blur border-t-2 border-yellow-500/60 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] pb-[env(safe-area-inset-bottom)]">
                     {!ownsAll && (
@@ -475,13 +475,13 @@ const FestiveOfferPage = () => {
                                 <span className="text-2xl md:text-3xl font-black leading-none">₹{BUNDLE_PRICE}</span>
                                 <span className="text-xs md:text-sm text-white/40 line-through mb-0.5">₹{totalMrp || 2997}</span>
                             </div>
-                            <div className="text-[10px] text-[#eab308] uppercase tracking-wider font-bold mt-1">3 courses · Diwali Offer</div>
+                            <div className="text-[10px] text-[#eab308] uppercase tracking-wider font-bold mt-1">3 courses · Bhai Dooj Offer</div>
                         </div>
 
                         {!ownsAll && (
                             <div className="hidden md:flex flex-col items-center shrink-0">
                                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-red-400 mb-1.5">
-                                    <Timer size={13} /> Diwali offer ends in
+                                    <Timer size={13} /> Bhai Dooj offer ends in
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     {[
@@ -529,7 +529,7 @@ const FestiveOfferPage = () => {
                 <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5">
                     <div className="festive-pop w-full max-w-sm bg-[#121212] border border-yellow-500/40 rounded-3xl p-7 text-center shadow-[0_0_60px_rgba(234,179,8,0.3)]">
                         <div className="flex justify-center mb-3"><Diya delay="0ms" /></div>
-                        <h2 className="text-2xl font-black">Happy Diwali!</h2>
+                        <h2 className="text-2xl font-black">Happy Bhai Dooj!</h2>
                         <p className="text-gray-300 mt-2 mb-6">All 3 courses are now yours. Open your Profile to start learning.</p>
                         <button
                             onClick={() => navigate('/profile')}

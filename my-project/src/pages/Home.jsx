@@ -11,6 +11,7 @@ import ContinueWatching from '../components/ContinueWatching';
 import { CohortRail, TrendingRail } from '../components/HomeRails';
 import DiwaliSky from '../components/DiwaliSky';
 import { isFestiveLive } from '../festive';
+import { swipesMonths } from '../swipes';
 import '../festive.css';
 
 /* Small combo / offer strip — real Swipes Pro pricing, TuteDude-style punchy copy */
@@ -23,10 +24,10 @@ const ComboStrip = () => (
           Swipes Pro
         </p>
         <h3 className="text-xl md:text-2xl font-black text-white tracking-tight leading-snug">
-          Learn a new skill every week. Start at just ₹1.
+          Learn a new skill every week.
         </h3>
         <p className="text-sm text-gray-400 mt-1.5">
-          ₹1 for 3 days, then ₹799 for the first year and ₹1,299/year after, on autopay. Certificates included. Cancel anytime.
+          {swipesMonths() === 18 ? '₹799 for 18 months (6 months free) till 31 Dec' : '₹799 a year'}, then ₹799/year on autopay. Certificates included. Cancel anytime.
         </p>
       </div>
       <Link

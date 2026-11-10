@@ -319,20 +319,24 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
 // 2a. SWIPES PRO AUTOPAY (Razorpay Subscriptions)
 // =====================================================
 //
-// One yearly plan of Rs 1299. A first-time buyer gets an offer that takes the first year down to Rs 799. Razorpay ties each offer to
-// one payment method, so there is one offer each for UPI and card. Someone who
-// has never had a trial pays Rs 1 now and the first year on day 3.
-const SWIPES_PLAN_ID = 'plan_TxJWDZgQ7X20Wa';
-const SWIPES_OFFER_IDS = { upi: 'offer_TxJtBnWJUWRBQc', card: 'offer_TxJvzlmqJFYBFt' };
-const TRIAL_DAYS = 3;
-const TRIAL_FEE_PAISE = 100;
+// One price: Rs 799, paid upfront when autopay is set up. Until the launch
+// offer ends that buys 18 months (a year plus 6 months free), after that 12.
+// The yearly Rs 799 plan then renews on autopay from the end of that period.
+const SWIPES_PLAN_ID = 'plan_TyX5nzoZrAI17x';
+const SWIPES_PRICE_PAISE = 79900;
+const SWIPES_LAUNCH_END = new Date('2026-12-31T23:59:59+05:30');
 const YEARLY_CYCLES = 10;
+
+const swipesPrepaidMonths = () => (Date.now() <= SWIPES_LAUNCH_END.getTime() ? 18 : 12);
+
+const addMonths = (date, months) => {
+    const result = new Date(date);
+    result.setMonth(result.getMonth() + months);
+    return result;
+};
 
 router.post('/subscribe', requireAuth, async (req, res) => {
     try {
-        const { method } = req.body;
-        if (!SWIPES_OFFER_IDS[method]) return res.status(400).json({ message: "Choose UPI or card to continue." });
-
         const user = await User.findById(req.user._id).select('biteSizeSubscription').lean();
         if (!user) return res.status(404).json({ message: "User not found" });
 
@@ -341,28 +345,25 @@ router.post('/subscribe', requireAuth, async (req, res) => {
             return res.status(400).json({ message: "You already have Swipes Pro." });
         }
 
-        const isTrial = !sub.trialUsed;
-        const options = {
+        const months = swipesPrepaidMonths();
+        const renewsAt = addMonths(Date.now(), months);
+
+        const subscription = await razorpay.subscriptions.create({
             plan_id: SWIPES_PLAN_ID,
             total_count: YEARLY_CYCLES,
             quantity: 1,
             customer_notify: 1,
-            notes: { product: 'swipes', userId: user._id.toString(), trial: String(isTrial) }
-        };
-        if (!sub.introUsed) options.offer_id = SWIPES_OFFER_IDS[method];
-        if (isTrial) {
-            options.start_at = Math.floor(Date.now() / 1000) + TRIAL_DAYS * 24 * 60 * 60;
-            options.addons = [{ item: { name: 'Swipes Pro 3-day trial', amount: TRIAL_FEE_PAISE, currency: 'INR' } }];
-        }
-
-        const subscription = await razorpay.subscriptions.create(options);
+            start_at: Math.floor(renewsAt.getTime() / 1000),
+            addons: [{ item: { name: `Swipes Pro, first ${months} months`, amount: SWIPES_PRICE_PAISE, currency: 'INR' } }],
+            notes: { product: 'swipes', userId: user._id.toString(), months: String(months) }
+        });
 
         await User.updateOne(
             { _id: user._id },
             { $set: { 'biteSizeSubscription.razorpaySubscriptionId': subscription.id } }
         );
 
-        res.json({ success: true, key_id: process.env.RAZORPAY_KEY_ID, subscription_id: subscription.id, isTrial });
+        res.json({ success: true, key_id: process.env.RAZORPAY_KEY_ID, subscription_id: subscription.id, months, renewsAt });
     } catch (err) {
         console.error("Subscribe Failed:", err);
         res.status(500).json({ message: "Could not start autopay. Please try again." });

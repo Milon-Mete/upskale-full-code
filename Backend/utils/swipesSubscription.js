@@ -13,31 +13,27 @@ const applySubscription = async (sub) => {
     const user = await User.findById(sub.notes.userId).select('biteSizeSubscription').lean();
     if (user?.biteSizeSubscription?.razorpaySubscriptionId !== sub.id) return false;
 
-    const isTrial = sub.notes.trial === 'true';
     const fields = {};
 
     if (sub.status === 'authenticated') {
-        // Mandate approved, first yearly charge still ahead. One day of grace
-        // lets the charge and its webhook land before access lapses.
-        const until = isTrial ? sub.start_at * 1000 + DAY : Date.now() + DAY;
+        // Mandate approved and the upfront Rs 799 paid. Access runs to the first
+        // yearly charge, plus a day of grace so that charge and its webhook land
+        // before access lapses.
         Object.assign(fields, {
             status: 'active',
-            planType: isTrial ? 'trial' : 'yearly',
-            expiresAt: new Date(until),
+            planType: 'yearly',
+            expiresAt: new Date(sub.start_at * 1000 + DAY),
             autopayStatus: 'on',
-            nextChargeAt: isTrial ? new Date(sub.start_at * 1000) : null
+            nextChargeAt: new Date(sub.start_at * 1000)
         });
-        if (isTrial) fields.trialUsed = true;
     } else if (sub.status === 'active' && sub.paid_count > 0) {
         Object.assign(fields, {
             status: 'active',
             planType: 'yearly',
             expiresAt: new Date(sub.current_end * 1000 + DAY),
             autopayStatus: 'on',
-            nextChargeAt: sub.charge_at ? new Date(sub.charge_at * 1000) : null,
-            introUsed: true
+            nextChargeAt: sub.charge_at ? new Date(sub.charge_at * 1000) : null
         });
-        if (isTrial) fields.trialUsed = true;
     } else if (sub.status === 'pending' || sub.status === 'halted') {
         // Razorpay is retrying or has given up. Access runs to its existing date.
         fields.autopayStatus = 'failed';

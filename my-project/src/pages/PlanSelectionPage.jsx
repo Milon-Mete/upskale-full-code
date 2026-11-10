@@ -4,11 +4,9 @@ import { Award, ArrowRight, BookOpen, Check, ChevronLeft, CircleCheck, Loader2, 
 import { BASE_URL } from '../config';
 import LoginModal from '../components/LoginModal';
 import '../swipes.css';
+import { SWIPES_PRICE, swipesMonths } from '../swipes';
 
-const INTRO_PRICE = 799;
-const RENEWAL_PRICE = 1299;
-const TRIAL_DAYS = 3;
-// Sales stay closed until the real Rs 1 test passes. /pro?launch opens checkout for that test.
+// Sales stay closed until the real test purchase passes. /pro?launch opens checkout for that test.
 const SALES_OPEN = new URLSearchParams(window.location.search).has('launch');
 
 const BENEFITS = [
@@ -56,7 +54,6 @@ const PlanSelectionPage = () => {
     const [processing, setProcessing] = useState(false);
     const [confirmCancel, setConfirmCancel] = useState(false);
     const [message, setMessage] = useState('');
-    const [payMethod, setPayMethod] = useState('upi');
 
     useEffect(() => {
         const script = document.createElement('script');
@@ -80,11 +77,11 @@ const PlanSelectionPage = () => {
     const subscription = currentUser?.biteSizeSubscription;
     const isActive = subscription?.status === 'active' && subscription?.expiresAt && new Date(subscription.expiresAt) > new Date();
     const autopayOn = subscription?.autopayStatus === 'on';
-    const getsTrial = !subscription?.trialUsed;
-    const getsIntro = !subscription?.introUsed;
-    const yearPrice = getsIntro ? INTRO_PRICE : RENEWAL_PRICE;
-    const chargeDate = new Date(Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000);
-    const buyLabel = !SALES_OPEN ? 'Opening soon' : getsTrial ? 'Start for ₹1' : `Pay ${rupees(yearPrice)}`;
+    const months = swipesMonths();
+    const isLaunchOffer = months === 18;
+    const renewsOn = new Date();
+    renewsOn.setMonth(renewsOn.getMonth() + months);
+    const buyLabel = !SALES_OPEN ? 'Opening soon' : isLaunchOffer ? `Get ${months} months for ${rupees(SWIPES_PRICE)}` : `Pay ${rupees(SWIPES_PRICE)}`;
 
     const handleSubscribe = async () => {
         if (!currentUser) {
@@ -95,7 +92,7 @@ const PlanSelectionPage = () => {
         setMessage('');
         try {
             const initRes = await fetch(`${BASE_URL}/bitesize-courses/subscribe`, {
-                method: 'POST', headers: authHeaders(), credentials: 'include', body: JSON.stringify({ method: payMethod })
+                method: 'POST', headers: authHeaders(), credentials: 'include', body: JSON.stringify({})
             });
             const init = await initRes.json();
 
@@ -116,9 +113,8 @@ const PlanSelectionPage = () => {
                 key: init.key_id,
                 subscription_id: init.subscription_id,
                 name: 'UPSKALE Swipes Pro',
-                description: init.isTrial ? `₹1 trial, then ${rupees(yearPrice)} autopay` : `${rupees(yearPrice)} for the year, on autopay`,
+                description: `${rupees(SWIPES_PRICE)} for ${init.months} months, then ${rupees(SWIPES_PRICE)}/year on autopay`,
                 prefill: { name: currentUser.name, email: currentUser.email, contact: currentUser.phone },
-                method: { upi: payMethod === 'upi', card: payMethod === 'card', netbanking: false, wallet: false, emandate: false },
                 theme: { color: '#eab308' },
                 modal: { ondismiss: () => setProcessing(false) },
                 handler: async (response) => {
@@ -246,49 +242,28 @@ const PlanSelectionPage = () => {
                         ) : (
                             <>
                                 <p className="text-xs font-black uppercase tracking-[0.18em] text-yellow-400">
-                                    {getsTrial ? 'New member offer' : getsIntro ? 'First year offer applied' : 'Swipes Pro yearly'}
+                                    {isLaunchOffer ? 'Launch offer · till 31 Dec' : 'Swipes Pro yearly'}
                                 </p>
                                 <div className="flex items-end gap-2 mt-2">
-                                    <span className="swipe-pop text-6xl font-black leading-none">{getsTrial ? '₹1' : rupees(yearPrice)}</span>
-                                    <span className="text-gray-400 font-semibold mb-1">{getsTrial ? `for ${TRIAL_DAYS} days` : 'for the year'}</span>
+                                    <span className="swipe-pop text-6xl font-black leading-none">{rupees(SWIPES_PRICE)}</span>
+                                    <span className="text-gray-400 font-semibold mb-1">for {months} months</span>
                                 </div>
+                                {isLaunchOffer && (
+                                    <p className="mt-2 inline-block text-xs font-black uppercase tracking-wider text-black bg-[#00d26a] px-2.5 py-1 rounded-md">12 months + 6 months free</p>
+                                )}
 
                                 <ol className="mt-5 space-y-2.5 text-sm">
-                                    {getsTrial && (
-                                        <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Today:</b> ₹1 and full access for {TRIAL_DAYS} days</span></li>
-                                    )}
-                                    <li className="flex gap-2.5">
-                                        <Check size={18} className="text-[#00d26a] shrink-0" />
-                                        <span>
-                                            <b>{getsTrial ? formatDate(chargeDate) : 'Today'}:</b> {rupees(yearPrice)} for the {getsIntro ? 'first ' : ''}year
-                                            {getsIntro && <span className="text-gray-500"> <s>{rupees(RENEWAL_PRICE)}</s></span>}
-                                        </span>
-                                    </li>
-                                    <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Every year after:</b> {rupees(RENEWAL_PRICE)}</span></li>
+                                    <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Today:</b> {rupees(SWIPES_PRICE)} for {months} months of access</span></li>
+                                    <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>{formatDate(renewsOn)}:</b> renews at {rupees(SWIPES_PRICE)}/year on autopay</span></li>
+                                    <li className="flex gap-2.5"><Check size={18} className="text-[#00d26a] shrink-0" /><span><b>Cancel anytime:</b> you keep access until the end of what you paid for</span></li>
                                 </ol>
-
-                                <div className={`${SALES_OPEN ? 'grid' : 'hidden'} grid-cols-2 gap-2 mt-5`} role="radiogroup" aria-label="Autopay method">
-                                    {[['upi', 'UPI Autopay'], ['card', 'Card']].map(([value, label]) => (
-                                        <button
-                                            key={value}
-                                            type="button"
-                                            role="radio"
-                                            aria-checked={payMethod === value}
-                                            onClick={() => setPayMethod(value)}
-                                            className={`py-3 rounded-xl border text-sm font-bold transition-colors ${payMethod === value ? 'border-yellow-400 bg-yellow-400/10 text-white' : 'border-white/15 text-gray-400'}`}
-                                        >
-                                            {label}
-                                        </button>
-                                    ))}
-                                </div>
 
                                 <button onClick={handleSubscribe} disabled={processing || !SALES_OPEN} className="hidden lg:flex swipe-cta w-full mt-6 py-4 rounded-xl text-black font-black text-lg items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
                                     {processing ? <Loader2 size={20} className="animate-spin" /> : <>{buyLabel} <ArrowRight size={20} /></>}
                                 </button>
 
                                 <p className="text-xs text-gray-400 leading-relaxed mt-4">
-                                    Autopay renews automatically until you cancel.
-                                    {getsTrial ? ` Cancel before ${formatDate(chargeDate)} and you won't be charged the yearly amount.` : ''} Cancel anytime from this page.
+                                    Autopay renews automatically until you cancel. Cancel anytime from this page.
                                 </p>
                                 <p className="text-xs text-gray-500 mt-2 flex items-center gap-1.5"><ShieldCheck size={14} className="text-[#008a45] shrink-0" /> Secure autopay by Razorpay</p>
                             </>
@@ -303,8 +278,9 @@ const PlanSelectionPage = () => {
                     <button onClick={handleSubscribe} disabled={processing || !SALES_OPEN} className="swipe-cta w-full py-4 rounded-xl text-black font-black text-lg flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-60">
                         {processing ? <Loader2 size={20} className="animate-spin" /> : <>{buyLabel} <ArrowRight size={20} /></>}
                     </button>
+                    {message && <p className="text-xs text-yellow-300 text-center mt-2">{message}</p>}
                     <p className="text-[11px] text-gray-400 text-center mt-2">
-                        {getsTrial ? `Then ${rupees(yearPrice)} on ${formatDate(chargeDate)}, ` : ''}{rupees(RENEWAL_PRICE)}/year after. Cancel anytime.
+                        Renews at {rupees(SWIPES_PRICE)}/year on {formatDate(renewsOn)}. Cancel anytime.
                     </p>
                 </div>
             )}

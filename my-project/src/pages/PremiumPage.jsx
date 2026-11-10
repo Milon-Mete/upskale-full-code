@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import { BASE_URL } from '../config';
-import { realSwipes } from '../swipes';
+import { realSwipes, swipesMonths } from '../swipes';
 
 
 const IconMap = {
@@ -370,22 +370,14 @@ const PremiumPage = () => {
                                                     </div>
                                                     
                                                     <div className="space-y-1.5">
-                                                        <div className="flex items-center justify-between bg-gradient-to-r from-[#eab308]/10 to-transparent border border-[#eab308]/20 rounded-md px-2.5 py-1.5 backdrop-blur-sm">
-                                                            <span className="text-[10px] text-[#eab308] font-black uppercase tracking-wider">3-Day Trial</span>
-                                                            <div className="flex items-baseline gap-1">
-                                                                <span className="text-white font-black text-sm">₹1</span>
-                                                                <span className="text-[9px] text-[#eab308]/80 font-medium">only</span>
-                                                            </div>
-                                                        </div>
-                                                        
                                                         <div className="flex items-center gap-1.5">
                                                             <div className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 rounded-md px-2 py-1.5 backdrop-blur-sm">
-                                                                <span className="text-[9px] text-gray-400 font-bold uppercase">First year</span>
+                                                                <span className="text-[9px] text-gray-400 font-bold uppercase">{swipesMonths()} months</span>
                                                                 <span className="text-white font-bold text-xs">₹799</span>
                                                             </div>
                                                             <div className="flex-1 flex items-center justify-between bg-white/5 border border-white/10 rounded-md px-2 py-1.5 backdrop-blur-sm">
                                                                 <span className="text-[9px] text-gray-400 font-bold uppercase">Then / year</span>
-                                                                <span className="text-white font-bold text-xs">₹1,299</span>
+                                                                <span className="text-white font-bold text-xs">₹799</span>
                                                             </div>
                                                         </div>
                                                     </div>

@@ -15,7 +15,7 @@ const faqs = [
   },
   {
     q: "What is Swipes Pro?",
-    a: "Our short-course subscription. New members try it for ₹1 for 3 days. Autopay then charges ₹799 for the first year, and ₹1,299 for each year after. Cancel anytime. Every course comes with a certificate.",
+    a: "Our short-course subscription: ₹799 a year on autopay, with a certificate for every course. Join before 31 Dec 2026 and your ₹799 covers 18 months. Cancel anytime.",
   },
   {
     q: "Do I get recordings of live sessions?",

@@ -67,7 +67,7 @@ const ARC_STOPS = [
 ];
 
 const WinterArc = () => (
-    <svg viewBox="0 0 320 140" className="w-full max-w-[420px] mx-auto" role="img" aria-label="Your winter arc: Excel, then Power BI, then AI tools, then the new you in 2027">
+    <svg viewBox="-24 0 368 140" className="w-full max-w-[420px] mx-auto" role="img" aria-label="Your winter arc: Excel, then Power BI, then AI tools, then the new you in 2027">
         <defs>
             <linearGradient id="arcGrad" x1="0" x2="1">
                 <stop offset="0%" stopColor="#7dd3fc" />

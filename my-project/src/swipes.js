@@ -10,4 +10,7 @@ export const realSwipes = (courses) =>
 // Backend/routes/biteSizeRoutes.js, which is what Razorpay actually charges.
 export const SWIPES_PRICE = 799;
 export const SWIPES_LAUNCH_END = new Date('2026-12-31T23:59:59+05:30');
-export const swipesMonths = () => (Date.now() <= SWIPES_LAUNCH_END.getTime() ? 18 : 12);
+// Money-back guarantee. Keep in step with Backend/utils/swipesGuarantee.js.
+export const GUARANTEE_DAYS = 30;
+export const GUARANTEE_SHARES = [266, 266, 267];
+export const swipesMonths =() => (Date.now() <= SWIPES_LAUNCH_END.getTime() ? 18 : 12);

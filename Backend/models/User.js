@@ -63,7 +63,9 @@ const userSchema = new mongoose.Schema({
     introUsed: { type: Boolean, default: false },
     razorpaySubscriptionId: { type: String, default: null },
     autopayStatus: { type: String, enum: ['none', 'on', 'failed', 'off'], default: 'none' },
-    nextChargeAt: { type: Date, default: null }
+    nextChargeAt: { type: Date, default: null },
+    // When the Rs 799 was paid. Starts the 30-day money-back guarantee window.
+    paidAt: { type: Date, default: null }
   },
 
 // ... (keep the rest of your schema)

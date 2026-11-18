@@ -18,6 +18,10 @@ const faqs = [
     a: "Our short-course subscription: ₹799 a year on autopay, with a certificate for every course. Join before 31 Dec 2026 and your ₹799 covers 18 months. Cancel anytime.",
   },
   {
+    q: "How does the Swipes Pro money-back guarantee work?",
+    a: "Finish a Swipes course within 30 days of joining (watch every lesson and earn the certificate) and get ₹266 back. Finish 3 courses and you get the full ₹799 back. Claim it from the Swipes Pro page; it is refunded to your original payment method within 7 working days.",
+  },
+  {
     q: "Do I get recordings of live sessions?",
     a: "Yes. Every live masterclass and cohort session is recorded — miss nothing, rewatch anytime.",
   },

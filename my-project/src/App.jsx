@@ -122,6 +122,7 @@ function App() {
           <Route path="/course/:slug" element={<DynamicCoursePage />} />
           <Route path="/recorded-course/:slug" element={<RecordedCourseLandingPage />} />
           <Route path="/festive-offer" element={<FestiveOfferPage />} />
+          <Route path="/winter-arc" element={<FestiveOfferPage />} />
           <Route path="/learn/:cohortId" element={<ExcelPlaylistPage />} />
           <Route path="/pro" element={<PlanSelectionPage />} />
           <Route path="/bitesize/:slug" element={<ErrorBoundary><BiteSizeCoursePage /></ErrorBoundary>} />

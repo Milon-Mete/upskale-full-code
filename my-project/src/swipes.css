@@ -185,3 +185,38 @@
 @media (prefers-reduced-motion: reduce) {
     .pro-bulb, .pro-flame, .pro-glow, .pro-sparkle, .pro-live-dot, .pro-tick, .pro-cta { animation: none; }
 }
+
+/* ---------- Money-back guarantee ---------- */
+.guarantee-card {
+    background: #ffffff;
+    border: 2px solid #86efac;
+    border-radius: 1.5rem;
+    padding: 1.25rem;
+    box-shadow: 0 10px 30px rgba(22, 101, 52, 0.12);
+}
+.guarantee-seal {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; background: radial-gradient(circle at 30% 30%, #4ade80, #15803d);
+    box-shadow: 0 0 0 4px #dcfce7;
+}
+.guarantee-step { background: #f0fdf4; border-radius: 1rem; padding: 0.75rem 0.4rem; text-align: center; }
+.guarantee-coin {
+    width: 34px; height: 34px; border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #78350f; background: radial-gradient(circle at 35% 30%, #fde68a, #f59e0b);
+    box-shadow: 0 2px 0 #b45309;
+    animation: guarantee-drop 2.4s cubic-bezier(0.3, 1.4, 0.5, 1) infinite;
+    animation-delay: var(--delay, 0s);
+}
+@keyframes guarantee-drop {
+    0% { transform: translateY(-14px) rotateY(0deg); opacity: 0; }
+    20% { transform: translateY(0) rotateY(180deg); opacity: 1; }
+    80% { transform: translateY(0) rotateY(360deg); opacity: 1; }
+    100% { transform: translateY(0) rotateY(360deg); opacity: 1; }
+}
+.guarantee-bar { height: 10px; border-radius: 999px; background: #f3dfc4; overflow: hidden; }
+.guarantee-bar span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #22c55e, #15803d); transition: width 0.8s ease; }
+@media (prefers-reduced-motion: reduce) {
+    .guarantee-coin { animation: none; }
+}

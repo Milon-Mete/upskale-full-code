@@ -152,7 +152,7 @@ if (totalAmountToCharge <= 0 || processedItems.length === 0) {
         // on top of the bundle.
         const FESTIVE_BUNDLE_PRICE = 199;
         // Offer window: the Rs 199 lock only applies inside this window.
-        // Bhai Dooj window ends 2026-12-31T23:59:59+05:30. After that the bundle
+        // Winter Arc (New Year New You) window ends 2026-12-31T23:59:59+05:30. After that the bundle
         // check below is skipped and the 3 courses price normally.
         const FESTIVE_OFFER_END = new Date('2026-12-31T23:59:59+05:30');
         const FESTIVE_BUNDLE_SLUGS = [
@@ -172,7 +172,7 @@ if (totalAmountToCharge <= 0 || processedItems.length === 0) {
             totalCartDiscount = cartBaseTotal - FESTIVE_BUNDLE_PRICE;
             cartFinalTotal = FESTIVE_BUNDLE_PRICE;
             appliedPromotionsData.push({
-                promotionName: 'Bhai Dooj Offer: 3-Course Bundle',
+                promotionName: 'New Year New You: Winter Arc 3-Course Bundle',
                 discountValue: totalCartDiscount
             });
         }

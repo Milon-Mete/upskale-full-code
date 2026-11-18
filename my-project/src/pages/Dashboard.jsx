@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { LayoutDashboard, Star, ShieldAlert, Loader2, Tag, Users, Award, FilePlus, Menu, Video, X, FolderSearch, BookOpen, MonitorPlay, MessageCircle, Settings, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Star, ShieldAlert, Loader2, Tag, Users, Award, FilePlus, Menu, Video, X, FolderSearch, BookOpen, MonitorPlay, MessageCircle, Settings, Sparkles, ShieldCheck } from 'lucide-react';
 
 // --- Components ---
 import Navbar from '../components/Navbar';
@@ -16,6 +16,7 @@ import FeedbackAdmin from '../components/FeedbackAdmin';
 import CourseEnrollmentStats from '../components/CourseEnrollmentStats';
 import MasterclassEnrollmentStats from '../components/MasterclassEnrollmentStats';
 import BiteSizeEnrollmentStats from '../components/BiteSizeEnrollmentStats';
+import RefundClaimsAdmin from '../components/RefundClaimsAdmin';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -64,6 +65,7 @@ const Dashboard = () => {
     { id: 'enrollments', label: 'Enrollments', icon: BookOpen, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
     { id: 'mc-stats', label: 'MC Bookings', icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10' },
     { id: 'bite-starts', label: 'Bite size En', icon: Video, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+    { id: 'refunds', label: 'Refunds', icon: ShieldCheck, color: 'text-green-400', bg: 'bg-green-500/10' },
     { id: 'certificate', label: 'Certify', icon: Award, color: 'text-pink-400', bg: 'bg-pink-500/10' }, 
     { id: 'ext-cert', label: 'Quick Cert', icon: FilePlus, color: 'text-orange-400', bg: 'bg-orange-500/10' },
     { id: 'search-cert', label: 'Find Cert', icon: FolderSearch, color: 'text-teal-400', bg: 'bg-teal-500/10' },
@@ -201,6 +203,7 @@ const Dashboard = () => {
               {activeTab === 'enrollments' && <CourseEnrollmentStats />}
               {activeTab === 'mc-stats' && <MasterclassEnrollmentStats />}
               {activeTab === 'bite-starts' && <BiteSizeEnrollmentStats />}
+              {activeTab === 'refunds' && <RefundClaimsAdmin />}
               {activeTab === 'certificate' && <Certificate />}
               {activeTab === 'ext-cert' && <ExternalCertificateGenerator />}
               {activeTab === 'search-cert' && <CertificateSearchManager />}

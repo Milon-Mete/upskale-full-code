@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowRight, Award, CalendarDays, CircleCheck, Loader2, ShieldCheck, Smartphone, Sparkles, X } from 'lucide-react';
 import { BASE_URL } from '../config';
 import LoginModal from '../components/LoginModal';
+import { GuaranteePromise, GuaranteeTracker } from '../components/SwipesGuarantee';
 import '../swipes.css';
 import { SWIPES_PRICE, SWIPES_LAUNCH_END, swipesMonths } from '../swipes';
 
@@ -279,6 +280,7 @@ const PlanSelectionPage = () => {
                             <button onClick={() => setConfirmCancel(true)} className="mt-4 text-sm text-[#6b3a1a] underline">Cancel autopay</button>
                         ))}
                         {message && <p className="text-sm font-bold text-green-700 mt-3">{message}</p>}
+                        <GuaranteeTracker />
                     </div>
                 ) : (
                     <>
@@ -294,6 +296,9 @@ const PlanSelectionPage = () => {
                                 </span>
                             )}
                         </div>
+                        <p className="swipe-rise mt-3 inline-flex items-center gap-1.5 bg-green-600 text-white text-xs font-black uppercase tracking-wider px-3 py-1.5 rounded-full" style={{ '--delay': '330ms' }}>
+                            <ShieldCheck size={14} /> 100% money-back guarantee
+                        </p>
 
                         <div className="swipe-rise grid grid-cols-3 gap-3 mt-7" style={{ '--delay': '360ms' }}>
                             <div className="pro-tile">
@@ -309,6 +314,8 @@ const PlanSelectionPage = () => {
                                 <span className="text-xs font-semibold text-[#6b3a1a] mt-1">Short lessons on your phone</span>
                             </div>
                         </div>
+
+                        <GuaranteePromise />
 
                         <p className="swipe-rise text-xs text-[#8a5a35] leading-relaxed mt-6" style={{ '--delay': '420ms' }}>
                             Pay {rupees(SWIPES_PRICE)} today for {months} months. Autopay renews at {rupees(SWIPES_PRICE)}/year on {formatDate(renewsOn)}.

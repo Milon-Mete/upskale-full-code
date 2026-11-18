@@ -2,14 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Clock, ShieldCheck, ArrowRight, Loader2, ChevronLeft,
-    CheckCircle2, Gift, Timer
+    CheckCircle2, Gift, Timer, Snowflake
 } from 'lucide-react';
 import { BASE_URL } from '../config';
 import { FESTIVE_OFFER_END, isFestiveLive } from '../festive';
-import DiwaliSky from '../components/DiwaliSky';
+import WinterSky from '../components/WinterSky';
+import WinterPoster from '../components/WinterPoster';
 import '../festive.css';
 
-// Festive Bundle: the 3 recorded courses, matched by slug prefix so a
+// Winter Arc (New Year New You) bundle: the 3 recorded courses, matched by slug prefix so a
 // re-seeded slug (with a new timestamp suffix) still resolves.
 const BUNDLE_SLUGS = [
     'ms-excel-with-generative-ai',   // MS Excel
@@ -56,30 +57,40 @@ const useCountdown = (target) => {
 
 const pad = (n) => String(n).padStart(2, '0');
 
-const Lantern = ({ className, delay }) => (
-    <svg viewBox="0 0 48 120" aria-hidden="true" className={`festive-lantern absolute top-0 ${className}`} style={{ animationDelay: delay }}>
-        <line x1="24" y1="0" x2="24" y2="34" stroke="#fbbf24" strokeWidth="1.5" />
-        <rect x="16" y="32" width="16" height="5" rx="2" fill="#fbbf24" />
-        <path d="M24 37c14 0 20 11 20 21S38 79 24 79 4 68 4 58s6-21 20-21z" fill="#ea580c" />
-        <path d="M24 37c6 0 9 11 9 21s-3 21-9 21-9-11-9-21 3-21 9-21z" fill="#fde047" opacity="0.75" />
-        <rect x="16" y="78" width="16" height="4" rx="2" fill="#fbbf24" />
-        <path d="M19 82v24M24 82v30M29 82v24" stroke="#f97316" strokeWidth="1.5" />
-    </svg>
-);
+// The arc: Excel, then Power BI, then AI tools, landing on a new you in 2027.
+const ARC_PATH = 'M20 110 Q 160 -30 300 110';
+const ARC_STOPS = [
+    { x: 20, y: 110, label: 'Excel' },
+    { x: 108, y: 44, label: 'Power BI' },
+    { x: 212, y: 44, label: 'AI Tools' },
+    { x: 300, y: 110, label: '2027 you' }
+];
 
-const Diya = ({ delay }) => (
-    <svg viewBox="0 0 44 40" aria-hidden="true" className="festive-diya w-9 h-8 md:w-11 md:h-10">
-        <path className="festive-flame" style={{ '--delay': delay }} d="M22 2c5 7 7 10 7 14a7 7 0 0 1-14 0c0-4 2-7 7-14z" fill="#fde047" />
-        <path className="festive-flame" style={{ '--delay': delay }} d="M22 10c2.5 3.5 3.5 5 3.5 7a3.5 3.5 0 0 1-7 0c0-2 1-3.5 3.5-7z" fill="#f97316" />
-        <path d="M2 24h40c-1 9-9 14-20 14S3 33 2 24z" fill="#c2410c" />
-        <path d="M2 24h40l-1 3H3z" fill="#fbbf24" />
+const WinterArc = () => (
+    <svg viewBox="0 0 320 140" className="w-full max-w-[420px] mx-auto" role="img" aria-label="Your winter arc: Excel, then Power BI, then AI tools, then the new you in 2027">
+        <defs>
+            <linearGradient id="arcGrad" x1="0" x2="1">
+                <stop offset="0%" stopColor="#7dd3fc" />
+                <stop offset="100%" stopColor="#a78bfa" />
+            </linearGradient>
+        </defs>
+        <path className="winter-arc-path" d={ARC_PATH} fill="none" stroke="url(#arcGrad)" strokeWidth="2.5" strokeLinecap="round" />
+        {ARC_STOPS.map((stop, i) => (
+            <g key={stop.label}>
+                <circle cx={stop.x} cy={stop.y} r={i === 3 ? 9 : 7} fill={i === 3 ? '#a78bfa' : '#0b1530'} stroke="#7dd3fc" strokeWidth="2.5" />
+                <text x={stop.x} y={stop.y + (i === 1 || i === 2 ? -14 : 26)} textAnchor="middle" fill="#e0f2fe" fontSize="12" fontWeight="800">{stop.label}</text>
+            </g>
+        ))}
+        <circle r="5" fill="#ffffff" style={{ filter: 'drop-shadow(0 0 6px #7dd3fc)' }}>
+            <animateMotion dur="4s" repeatCount="indefinite" path={ARC_PATH} keyPoints="0;1;1" keyTimes="0;0.85;1" calcMode="linear" />
+        </circle>
     </svg>
 );
 
 const FestiveOfferPage = () => {
     const navigate = useNavigate();
     const countdown = useCountdown(FESTIVE_OFFER_END);
-    // Bhai Dooj window: Rs 199 live until 31 Dec 2026 23:59 IST. When expired, the
+    // Winter Arc window: Rs 199 live until 31 Dec 2026 23:59 IST. When expired, the
     // page shows "offer ended" copy and the CTAs route home instead of checkout.
     const isOfferLive = isFestiveLive();
 
@@ -204,7 +215,7 @@ const FestiveOfferPage = () => {
                 amount: data.amount * 100,
                 currency: 'INR',
                 name: 'UPSKALE',
-                description: 'Bhai Dooj Offer: 3-Course Recorded Bundle',
+                description: 'New Year New You: Winter Arc 3-Course Bundle',
                 order_id: data.order_id,
                 handler: async (response) => {
                     try {
@@ -265,14 +276,14 @@ const FestiveOfferPage = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-                <Loader2 className="animate-spin text-yellow-500" size={40} />
+            <div className="min-h-screen winter-page flex items-center justify-center">
+                <Loader2 className="animate-spin text-sky-300" size={40} />
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white font-sans selection:bg-yellow-500/30 pb-40 relative overflow-x-clip">
+        <div className="min-h-screen winter-page text-white font-sans selection:bg-sky-500/30 pb-40 relative overflow-x-clip">
             <style>{`
                 @keyframes shine-sweep {
                     0% { transform: translateX(-150%) skewX(-20deg); }
@@ -289,20 +300,13 @@ const FestiveOfferPage = () => {
                 }
             `}</style>
 
-            {/* Festive glows */}
+            {/* Aurora glows */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-yellow-500 opacity-[0.07] blur-[150px] rounded-full" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-orange-600 opacity-[0.05] blur-[150px] rounded-full" />
+                <div className="absolute top-[-10%] right-[-5%] w-[500px] h-[500px] bg-sky-400 opacity-[0.10] blur-[150px] rounded-full" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-500 opacity-[0.08] blur-[150px] rounded-full" />
             </div>
 
-            {isOfferLive && <DiwaliSky celebrate={purchased ? 1 : 0} className={purchased ? 'z-[70]' : 'z-[1]'} />}
-
-            {isOfferLive && (
-                <div className="absolute top-0 left-0 right-0 h-32 pointer-events-none z-[2] overflow-hidden">
-                    <Lantern className="left-[20%] w-7 md:left-[22%] md:w-12" delay="0s" />
-                    <Lantern className="right-[32%] w-7 md:right-[22%] md:w-12" delay="-1.3s" />
-                </div>
-            )}
+            {isOfferLive && <WinterSky celebrate={purchased ? 1 : 0} className={purchased ? 'z-[70]' : 'z-[1]'} />}
 
             {/* Top Nav */}
             <nav className="relative z-10 p-4 md:p-6 md:px-20 max-w-7xl mx-auto flex items-center justify-between border-b border-white/5">
@@ -319,10 +323,10 @@ const FestiveOfferPage = () => {
             </nav>
 
             <div className="relative z-10 max-w-6xl mx-auto px-4 md:px-6">
-                {/* Bhai Dooj badge */}
+                {/* Winter Arc badge */}
                 <div className="pt-4 md:pt-8 flex justify-center festive-rise">
-                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] px-5 py-2 rounded-full shadow-[0_0_30px_rgba(234,179,8,0.45)]">
-                        {isOfferLive ? 'Bhai Dooj Special · Ends 31 Dec' : 'Bhai Dooj Offer Ended'}
+                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-200 via-white to-indigo-200 text-[#0b1530] font-black text-xs md:text-sm uppercase tracking-[0.2em] px-5 py-2 rounded-full shadow-[0_0_30px_rgba(125,211,252,0.45)]">
+                        <Snowflake size={14} /> {isOfferLive ? 'New Year New You · Ends 31 Dec' : 'Winter Arc Offer Ended'}
                     </span>
                 </div>
 
@@ -332,28 +336,17 @@ const FestiveOfferPage = () => {
                         <button
                             type="button"
                             onClick={isOfferLive && !ownsAll && !loadError ? handleBuy : undefined}
-                            aria-label={`Buy the Bhai Dooj bundle for ₹${BUNDLE_PRICE}`}
-                            className="festive-frame max-w-[540px] mx-auto active:scale-[0.99] transition-transform"
+                            aria-label={`Buy the Winter Arc bundle for ₹${BUNDLE_PRICE}`}
+                            className="winter-frame max-w-[540px] mx-auto active:scale-[0.99] transition-transform"
                         >
-                            <img
-                                src="/festive-hero.png"
-                                width="1086"
-                                height="1448"
-                                fetchPriority="high"
-                                alt="Bhai Dooj Offer: Data Analyst Beginner Pack. 3 recorded courses, AI Tools, Microsoft Excel and Microsoft Power BI. Now only ₹199."
-                            />
+                            <WinterPoster price={BUNDLE_PRICE} mrp={totalMrp || 2997} />
                         </button>
-                        {isOfferLive && (
-                            <div className="flex justify-center gap-5 md:gap-7 mt-5">
-                                {['0ms', '-300ms', '-600ms', '-150ms', '-450ms'].map((delay) => <Diya key={delay} delay={delay} />)}
-                            </div>
-                        )}
                     </div>
 
                     {loadError ? (
-                        <div className="text-center text-gray-400 py-16 px-4 border border-white/5 rounded-2xl bg-[#121212]">
-                            <Gift size={36} className="mx-auto mb-4 text-yellow-500" />
-                            <p className="font-semibold text-white mb-2">The festive bundle is being prepared.</p>
+                        <div className="text-center text-gray-400 py-16 px-4 border border-sky-200/10 rounded-2xl bg-[#0b1530]/80">
+                            <Gift size={36} className="mx-auto mb-4 text-sky-300" />
+                            <p className="font-semibold text-white mb-2">The Winter Arc bundle is being prepared.</p>
                             <p className="text-sm">Please check back in a little while, or browse all recorded courses from the home page.</p>
                         </div>
                     ) : (
@@ -361,12 +354,20 @@ const FestiveOfferPage = () => {
                             {isOfferLive && (
                                 <div className="text-center lg:text-left mb-6 festive-rise" style={{ '--delay': '200ms' }}>
                                     <h1 className="text-2xl md:text-4xl font-black tracking-tight leading-tight">
-                                        3 courses. One Bhai Dooj price.
+                                        Your Winter Arc starts now.
                                     </h1>
+                                    <p className="text-sky-100/70 mt-2">3 skills before 31 Dec. Walk into 2027 as a new you.</p>
                                     <p className="mt-3 flex items-end justify-center lg:justify-start gap-3">
                                         <span className="festive-strike text-lg md:text-xl text-white/50 font-bold">₹{totalMrp || 2997}</span>
-                                        <span className="festive-slam text-5xl md:text-6xl font-black leading-none text-yellow-400 drop-shadow-[0_0_24px_rgba(234,179,8,0.55)]">₹{BUNDLE_PRICE}</span>
+                                        <span className="festive-slam text-5xl md:text-6xl font-black leading-none text-white drop-shadow-[0_0_24px_rgba(125,211,252,0.7)]">₹{BUNDLE_PRICE}</span>
                                     </p>
+                                </div>
+                            )}
+
+                            {isOfferLive && (
+                                <div className="festive-rise mb-6 bg-white/[0.04] border border-sky-200/15 rounded-2xl px-3 pt-4 pb-2" style={{ '--delay': '250ms' }}>
+                                    <p className="text-center text-[11px] font-black uppercase tracking-[0.25em] text-sky-200 mb-1">Your arc</p>
+                                    <WinterArc />
                                 </div>
                             )}
 
@@ -375,7 +376,7 @@ const FestiveOfferPage = () => {
                                 {courses.map((course, index) => (
                                     <div
                                         key={course._id}
-                                        className="festive-rise flex items-center gap-3 md:gap-4 bg-[#121212]/90 border border-white/5 rounded-2xl p-3 md:p-3.5"
+                                        className="festive-rise flex items-center gap-3 md:gap-4 bg-[#0b1530]/80 border border-sky-200/10 rounded-2xl p-3 md:p-3.5 backdrop-blur"
                                         style={{ '--delay': `${300 + index * 120}ms` }}
                                     >
                                         <img
@@ -386,13 +387,13 @@ const FestiveOfferPage = () => {
                                         <div className="flex-1 min-w-0">
                                             <h3 className="font-bold text-white leading-snug line-clamp-2">{BUNDLE_TITLES[index]}</h3>
                                             <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
-                                                <Clock size={12} className="text-[#008a45] shrink-0" />
+                                                <Clock size={12} className="text-sky-300 shrink-0" />
                                                 Recorded · {Array.isArray(course.course) ? course.course.length : 0} modules · Certificate
                                             </p>
                                         </div>
                                         <div className="text-right shrink-0">
                                             {isOfferLive ? (
-                                                <div className="text-[11px] font-black uppercase tracking-wide text-[#00d26a]">Included</div>
+                                                <div className="text-[11px] font-black uppercase tracking-wide text-sky-300">Included</div>
                                             ) : (
                                                 <div className="font-black text-white">₹{priceOf(course)}</div>
                                             )}
@@ -403,12 +404,12 @@ const FestiveOfferPage = () => {
                             </div>
 
                             {/* One-line price + in-page CTA */}
-                            <div className="mt-6 bg-[#121212]/90 border border-yellow-500/25 rounded-2xl p-5 text-center festive-rise" style={{ '--delay': '700ms' }}>
+                            <div className="mt-6 bg-[#0b1530]/80 border border-sky-300/25 rounded-2xl p-5 backdrop-blur text-center festive-rise" style={{ '--delay': '700ms' }}>
                                 <p className="text-sm text-gray-400 mb-4">
                                     {isOfferLive ? (
-                                        <>All 3 courses worth <span className="line-through">₹{totalMrp || 2997}</span> · Bhai Dooj bundle discount applied at checkout</>
+                                        <>All 3 courses worth <span className="line-through">₹{totalMrp || 2997}</span> · Winter Arc price applied at checkout</>
                                     ) : (
-                                        <>The Rs 199 Bhai Dooj offer ended on 31 Dec — the 3 recorded courses are still available at their regular prices</>
+                                        <>The ₹199 Winter Arc offer ended on 31 Dec — the 3 recorded courses are still available at their regular prices</>
                                     )}
                                 </p>
                                 {ownsAll ? (
@@ -422,7 +423,7 @@ const FestiveOfferPage = () => {
                                     <button
                                         onClick={handleBuy}
                                         disabled={paying}
-                                        className="shine-btn festive-ring w-full py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black text-lg rounded-xl hover:brightness-110 transition-all flex justify-center items-center gap-2 active:scale-95 disabled:opacity-60"
+                                        className="shine-btn winter-ring w-full py-4 bg-gradient-to-r from-sky-200 via-white to-indigo-200 text-[#0b1530] font-black text-lg rounded-xl hover:brightness-110 transition-all flex justify-center items-center gap-2 active:scale-95 disabled:opacity-60"
                                     >
                                         {buyButtonContent}
                                     </button>
@@ -435,7 +436,7 @@ const FestiveOfferPage = () => {
                                     </button>
                                 )}
                                 <p className="text-xs text-gray-500 mt-3.5 flex items-center justify-center gap-1.5">
-                                    <ShieldCheck size={14} className="text-[#008a45] shrink-0" /> Secure payment by Razorpay · Instant access after payment
+                                    <ShieldCheck size={14} className="text-sky-300 shrink-0" /> Secure payment by Razorpay · Instant access after payment
                                 </p>
                             </div>
 
@@ -446,7 +447,7 @@ const FestiveOfferPage = () => {
                                     { q: 'Will I get certificates?', a: 'Yes, a verifiable certificate for each course on completion.' },
                                     { q: 'Which language?', a: 'Bengali + English, beginner friendly. Watch anytime on phone or laptop.' }
                                 ].map((item) => (
-                                    <div key={item.q} className="bg-[#121212]/90 border border-white/5 rounded-2xl p-4">
+                                    <div key={item.q} className="bg-[#0b1530]/80 border border-sky-200/10 rounded-2xl p-4">
                                         <p className="font-bold text-white mb-1">{item.q}</p>
                                         <p className="text-sm text-gray-400 leading-relaxed">{item.a}</p>
                                     </div>
@@ -458,9 +459,9 @@ const FestiveOfferPage = () => {
             </div>
 
             {/* Sticky bottom offer bar: price + countdown + shine CTA */}
-            {/* Hidden once the Bhai Dooj window ends (31 Dec 2026) */}
+            {/* Hidden once the Winter Arc window ends (31 Dec 2026) */}
             {isOfferLive && !loadError && (
-                <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#0d0d0d]/95 backdrop-blur border-t-2 border-yellow-500/60 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] pb-[env(safe-area-inset-bottom)]">
+                <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#060b1c]/95 backdrop-blur border-t-2 border-sky-300/60 shadow-[0_-10px_40px_rgba(0,0,0,0.7)] pb-[env(safe-area-inset-bottom)]">
                     {!ownsAll && (
                         <div className="md:hidden flex items-center justify-center gap-1.5 pt-2 text-[11px] font-bold uppercase tracking-wider text-red-400">
                             <Timer size={13} /> Offer ends in
@@ -475,13 +476,13 @@ const FestiveOfferPage = () => {
                                 <span className="text-2xl md:text-3xl font-black leading-none">₹{BUNDLE_PRICE}</span>
                                 <span className="text-xs md:text-sm text-white/40 line-through mb-0.5">₹{totalMrp || 2997}</span>
                             </div>
-                            <div className="text-[10px] text-[#eab308] uppercase tracking-wider font-bold mt-1">3 courses · Bhai Dooj Offer</div>
+                            <div className="text-[10px] text-sky-300 uppercase tracking-wider font-bold mt-1">3 courses · Winter Arc</div>
                         </div>
 
                         {!ownsAll && (
                             <div className="hidden md:flex flex-col items-center shrink-0">
                                 <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-red-400 mb-1.5">
-                                    <Timer size={13} /> Bhai Dooj offer ends in
+                                    <Timer size={13} /> Winter Arc offer ends in
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     {[
@@ -492,7 +493,7 @@ const FestiveOfferPage = () => {
                                     ].map((u, i) => (
                                         <React.Fragment key={u.l}>
                                             <div className="flex flex-col items-center">
-                                                <span className="bg-[#1c1c1c] border border-white/10 rounded-md px-2 py-1 text-base font-black tabular-nums leading-none min-w-[40px] text-center overflow-hidden">
+                                                <span className="bg-[#0b1530] border border-sky-200/20 rounded-md px-2 py-1 text-base font-black tabular-nums leading-none min-w-[40px] text-center overflow-hidden">
                                                     <span key={u.v} className="festive-tick">{pad(u.v)}</span>
                                                 </span>
                                                 <span className="text-[9px] text-gray-500 uppercase mt-1 font-bold">{u.l}</span>
@@ -515,7 +516,7 @@ const FestiveOfferPage = () => {
                             <button
                                 onClick={handleBuy}
                                 disabled={paying}
-                                className="shine-btn festive-ring flex-1 md:flex-none justify-center px-5 md:px-8 py-3 md:py-3.5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black text-sm md:text-base rounded-xl active:scale-95 transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
+                                className="shine-btn winter-ring flex-1 md:flex-none justify-center px-5 md:px-8 py-3 md:py-3.5 bg-gradient-to-r from-sky-200 via-white to-indigo-200 text-[#0b1530] font-black text-sm md:text-base rounded-xl active:scale-95 transition-all disabled:opacity-60 flex items-center gap-2 whitespace-nowrap"
                             >
                                 {buyButtonContent}
                             </button>
@@ -527,13 +528,13 @@ const FestiveOfferPage = () => {
             {/* Thank-you card after a successful payment */}
             {purchased && (
                 <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm flex items-center justify-center p-5">
-                    <div className="festive-pop w-full max-w-sm bg-[#121212] border border-yellow-500/40 rounded-3xl p-7 text-center shadow-[0_0_60px_rgba(234,179,8,0.3)]">
-                        <div className="flex justify-center mb-3"><Diya delay="0ms" /></div>
-                        <h2 className="text-2xl font-black">Happy Bhai Dooj!</h2>
-                        <p className="text-gray-300 mt-2 mb-6">All 3 courses are now yours. Open your Profile to start learning.</p>
+                    <div className="festive-pop w-full max-w-sm bg-[#0b1530] border border-sky-300/40 rounded-3xl p-7 text-center shadow-[0_0_60px_rgba(125,211,252,0.3)]">
+                        <div className="flex justify-center mb-3"><Snowflake size={40} className="text-sky-200" /></div>
+                        <h2 className="text-2xl font-black">Your Winter Arc has begun!</h2>
+                        <p className="text-gray-300 mt-2 mb-6">All 3 courses are now yours. Open your Profile and start your first lesson today.</p>
                         <button
                             onClick={() => navigate('/profile')}
-                            className="w-full py-4 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black rounded-xl active:scale-95 transition-all flex justify-center items-center gap-2"
+                            className="w-full py-4 bg-gradient-to-r from-sky-200 via-white to-indigo-200 text-[#0b1530] font-black rounded-xl active:scale-95 transition-all flex justify-center items-center gap-2"
                         >
                             Start Learning <ArrowRight size={20} />
                         </button>

@@ -13,6 +13,8 @@ const Coupon = require('../models/Coupon');
 
 const { requireAuth, adminOnly } = require('../middleware/auth');
 const { applySubscription } = require('../utils/swipesSubscription');
+const { guaranteeStatus, createClaim } = require('../utils/swipesGuarantee');
+const RefundClaim = require('../models/RefundClaim');
 
 const engagementLimiter = require('express-rate-limit')({
     windowMs: 60 * 1000,
@@ -360,7 +362,7 @@ router.post('/subscribe', requireAuth, async (req, res) => {
 
         await User.updateOne(
             { _id: user._id },
-            { $set: { 'biteSizeSubscription.razorpaySubscriptionId': subscription.id } }
+            { $set: { 'biteSizeSubscription.razorpaySubscriptionId': subscription.id, 'biteSizeSubscription.paidAt': null } }
         );
 
         res.json({ success: true, key_id: process.env.RAZORPAY_KEY_ID, subscription_id: subscription.id, months, renewsAt });
@@ -1048,6 +1050,64 @@ router.get('/admin/subscription-stats', adminOnly, async (req, res) => {
         res.json({ success: true, stats: statsArray, pagination: { total: totalSubscribed, currentPage: page, totalPages: Math.ceil(totalSubscribed / limit), hasMore: page * limit < totalSubscribed } });
     } catch (err) {
         res.status(500).json({ success: false, message: "Server Error" });
+    }
+});
+
+// =====================================================
+// 6. SWIPES PRO MONEY-BACK GUARANTEE
+// =====================================================
+// Students see their progress and claim; the owner refunds in the Razorpay
+// dashboard and marks the claim here. No money moves from this code.
+
+router.get('/guarantee/status', requireAuth, async (req, res) => {
+    try {
+        res.json({ success: true, ...(await guaranteeStatus(req.user._id, razorpay)) });
+    } catch (err) {
+        console.error('Guarantee status failed:', err);
+        res.status(500).json({ message: 'Could not load your money-back progress.' });
+    }
+});
+
+router.post('/guarantee/claim', requireAuth, async (req, res) => {
+    try {
+        const result = await createClaim(req.user._id, razorpay);
+        if (result.error) return res.status(400).json({ message: result.error });
+        res.json({ success: true, claim: result.claim, message: `Claim for ₹${result.claim.amount} sent. We'll refund it to your original payment method within 7 working days.` });
+    } catch (err) {
+        console.error('Guarantee claim failed:', err);
+        res.status(500).json({ message: 'Could not send your claim. Please try again.' });
+    }
+});
+
+router.get('/admin/refund-claims', adminOnly, async (req, res) => {
+    try {
+        const filter = ['pending', 'paid', 'rejected'].includes(req.query.status) ? { status: req.query.status } : {};
+        const claims = await RefundClaim.find(filter)
+            .sort({ createdAt: -1 })
+            .limit(200)
+            .populate('user', 'name email phone')
+            .lean();
+        res.json({ success: true, claims });
+    } catch (err) {
+        console.error('Refund claims list failed:', err);
+        res.status(500).json({ success: false, message: 'Server Error' });
+    }
+});
+
+router.post('/admin/refund-claims/:id', adminOnly, async (req, res) => {
+    try {
+        const { status, note } = req.body;
+        if (!['paid', 'rejected'].includes(status)) return res.status(400).json({ message: 'Status must be paid or rejected.' });
+        const claim = await RefundClaim.findOneAndUpdate(
+            { _id: req.params.id, status: 'pending' },
+            { $set: { status, adminNote: sanitizeString(note || ''), decidedAt: new Date() } },
+            { new: true }
+        );
+        if (!claim) return res.status(404).json({ message: 'Claim not found or already decided.' });
+        res.json({ success: true, claim });
+    } catch (err) {
+        console.error('Refund claim update failed:', err);
+        res.status(500).json({ success: false, message: 'Server Error' });
     }
 });
 

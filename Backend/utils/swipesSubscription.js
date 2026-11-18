@@ -46,6 +46,13 @@ const applySubscription = async (sub) => {
 
     const $set = Object.fromEntries(Object.entries(fields).map(([key, value]) => [PREFIX + key, value]));
     await User.updateOne({ _id: sub.notes.userId }, { $set });
+    if (sub.status === 'authenticated') {
+        // The first confirmation of this payment starts the money-back window.
+        await User.updateOne(
+            { _id: sub.notes.userId, 'biteSizeSubscription.paidAt': null },
+            { $set: { 'biteSizeSubscription.paidAt': new Date() } }
+        );
+    }
     return true;
 };
 

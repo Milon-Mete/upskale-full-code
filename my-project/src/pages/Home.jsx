@@ -9,7 +9,8 @@ import Footer from '../components/Footer';
 import FAQ from '../components/FAQ';
 import ContinueWatching from '../components/ContinueWatching';
 import { CohortRail, TrendingRail } from '../components/HomeRails';
-import DiwaliSky from '../components/DiwaliSky';
+import WinterSky from '../components/WinterSky';
+import WinterPoster from '../components/WinterPoster';
 import { isFestiveLive } from '../festive';
 import { swipesMonths } from '../swipes';
 import '../festive.css';
@@ -42,25 +43,21 @@ const ComboStrip = () => (
   </section>
 );
 
-/* Festive Offer strip — 3-course recorded bundle at ₹199, links to /festive-offer */
+/* Winter Arc strip (New Year New You): 3-course recorded bundle at ₹199, links to /festive-offer */
 const FestiveStrip = () => (
   <section className="px-4 md:px-6 pt-6">
-    <div className="max-w-[1400px] mx-auto rounded-3xl border border-yellow-500/30 bg-gradient-to-r from-[#171106] via-[#12100a] to-[#0f1a12] p-5 md:p-7 relative overflow-hidden">
-      <div className="absolute -top-20 -right-20 w-64 h-64 bg-yellow-500/10 blur-3xl rounded-full pointer-events-none" />
-      <DiwaliSky variant="strip" />
+    <div className="max-w-[1400px] mx-auto rounded-3xl border border-sky-300/30 bg-gradient-to-r from-[#0b1530] via-[#08102a] to-[#120d2e] p-5 md:p-7 relative overflow-hidden">
+      <div className="absolute -top-20 -right-20 w-64 h-64 bg-sky-400/15 blur-3xl rounded-full pointer-events-none" />
+      <WinterSky variant="strip" />
       <div className="flex flex-col md:flex-row md:items-center gap-5 relative">
         <div className="flex items-center gap-4 md:gap-5 flex-1 min-w-0">
-          <img
-            src="/festive-hero.png"
-            alt="Bhai Dooj Offer: Data Analyst Beginner Pack"
-            className="w-16 h-[84px] md:w-24 md:h-32 object-cover object-top rounded-2xl border border-yellow-500/30 shrink-0"
-          />
+          <WinterPoster compact />
           <div className="min-w-0">
-            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-yellow-400 mb-1.5 flex items-center gap-1.5">
-              <Sparkles size={13} /> Bhai Dooj Offer · Limited Time
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-sky-300 mb-1.5 flex items-center gap-1.5">
+              <Sparkles size={13} /> New Year New You · Winter Arc
             </p>
             <h3 className="text-lg md:text-2xl font-black text-white tracking-tight leading-snug">
-              Data Analyst Beginner Pack: Excel + AI Tools + Power BI
+              Start 2027 job-ready: Excel + Power BI + AI Tools
             </h3>
             <p className="text-sm text-gray-400 mt-1">
               3 recorded courses · Lifetime access · Certificates included
@@ -68,15 +65,15 @@ const FestiveStrip = () => (
             <p className="mt-2 flex items-end gap-2">
               <span className="festive-slam text-2xl md:text-3xl font-black text-white leading-none">₹199</span>
               <span className="festive-strike text-sm text-white/40">₹2,997</span>
-              <span className="px-2 py-0.5 bg-[#008a45] text-white text-[10px] font-black rounded-md uppercase tracking-wide">Bhai Dooj Price</span>
+              <span className="px-2 py-0.5 bg-sky-300 text-[#0b1530] text-[10px] font-black rounded-md uppercase tracking-wide">Till 31 Dec</span>
             </p>
           </div>
         </div>
         <Link
           to="/festive-offer"
-          className="festive-ring relative shrink-0 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-yellow-400 to-yellow-600 text-black font-black text-sm px-7 py-3.5 rounded-2xl hover:brightness-110 transition-all active:scale-95"
+          className="winter-ring relative shrink-0 inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-200 via-white to-indigo-200 text-[#0b1530] font-black text-sm px-7 py-3.5 rounded-2xl hover:brightness-110 transition-all active:scale-95"
         >
-          Grab the Offer
+          Start my Winter Arc
           <ArrowRight size={16} />
         </Link>
       </div>
